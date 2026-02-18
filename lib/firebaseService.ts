@@ -149,6 +149,16 @@ const mapProjectToSnakeCase = (input: ProjectInput) => ({
 export const projectService = {
     getAll: () => firestoreService.getAllDocuments('project'),
     subscribe: (callback: (data: any[]) => void) => firestoreService.subscribeToDocuments('project', callback),
+    subscribeToRecentActivity: (callback: (data: any[]) => void, limitCount = 5) => {
+        const q = query(
+            collection(db, 'project'),
+            orderBy('created_at', 'desc'),
+            limit(limitCount)
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(mapDoc));
+        });
+    },
     getById: (id: string) => firestoreService.getDocument('project', id),
 
     // Creates Project and related sub-collections automatically
@@ -273,6 +283,97 @@ export const dashboardService = {
         } catch (error: any) {
             return { success: false, error: error.message };
         }
+    },
+
+    // Real-time subscription for dashboard KPI stat cards
+    subscribeToStats: (callback: (stats: {
+        activeProjects: number;
+        activeProjectsTrend: string;
+        tasksDue: number;
+        tasksOverdue: number;
+        pendingQuotesCount: number;
+        pendingQuotesValue: number;
+        unreadMessages: number;
+    }) => void) => {
+        let projectCount = 0;
+        let projectsThisWeek = 0;
+        let estimatesCount = 0;
+        let estimatesValue = 0;
+        let tasksCount = 0;
+        let tasksOverdue = 0;
+        let messagesCount = 0;
+
+        const notify = () => callback({
+            activeProjects: projectCount,
+            activeProjectsTrend: projectsThisWeek > 0 ? `+${projectsThisWeek} this week` : 'No new this week',
+            tasksDue: tasksCount,
+            tasksOverdue,
+            pendingQuotesCount: estimatesCount,
+            pendingQuotesValue: estimatesValue,
+            unreadMessages: messagesCount,
+        });
+
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        // Active projects (non-completed)
+        const unsubProjects = onSnapshot(
+            query(collection(db, 'project'), orderBy('created_at', 'desc')),
+            (snap) => {
+                projectCount = snap.docs.filter(d => {
+                    const s = d.data().status;
+                    return !s || s !== 'Completed';
+                }).length;
+                projectsThisWeek = snap.docs.filter(d => {
+                    const created = d.data().created_at;
+                    return created && new Date(created) >= oneWeekAgo;
+                }).length;
+                notify();
+            }
+        );
+
+        // Pending quotes / estimates
+        const unsubEstimates = onSnapshot(
+            collection(db, 'estimates'),
+            (snap) => {
+                estimatesCount = snap.size;
+                estimatesValue = snap.docs.reduce((sum, d) => {
+                    const total = d.data().total_price || d.data().total || d.data().amount || 0;
+                    return sum + Number(total);
+                }, 0);
+                notify();
+            }
+        );
+
+        // Tasks due
+        const unsubTasks = onSnapshot(
+            collection(db, 'tasks'),
+            (snap) => {
+                tasksCount = snap.docs.filter(d => !d.data().completed).length;
+                tasksOverdue = snap.docs.filter(d => {
+                    const due = d.data().due_date;
+                    return !d.data().completed && due && new Date(due) < new Date();
+                }).length;
+                notify();
+            }
+        );
+
+        // Unread messages
+        const unsubMessages = onSnapshot(
+            query(collection(db, 'messages'), where('read', '==', false)),
+            (snap) => {
+                messagesCount = snap.size;
+                notify();
+            }
+        );
+
+        // Return cleanup function that unsubscribes all listeners
+        return () => {
+            unsubProjects();
+            unsubEstimates();
+            unsubTasks();
+            unsubMessages();
+        };
     },
     getRecentActivity: async (limitCount = 10) => {
         try {

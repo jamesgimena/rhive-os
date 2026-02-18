@@ -17,7 +17,7 @@ import {
 import { PAGE_GROUPS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useMockDB } from '../contexts/MockDatabaseContext';
-import { projectService } from '../lib/firebaseService';
+import { projectService, dashboardService } from '../lib/firebaseService';
 
 // Compact Session Widget
 const SessionWidget = () => {
@@ -52,12 +52,17 @@ const SessionWidget = () => {
 };
 
 // KPI Stat Card Component
-const StatCard = ({ label, value, icon: Icon, trend }: { label: string, value: string, icon: any, trend?: string }) => (
+const StatCard = ({ label, value, icon: Icon, trend, loading }: { label: string, value: string, icon: any, trend?: string, loading?: boolean }) => (
     <div className="bg-gray-900/60 border border-gray-700/50 p-4 rounded-xl flex items-center justify-between backdrop-blur-sm hover:border-[#ec028b]/50 transition-all duration-300 group shadow-lg">
         <div>
             <p className="text-gray-400 text-xs font-bold uppercase tracking-wider group-hover:text-[#ec028b] transition-colors">{label}</p>
-            <p className="text-2xl font-bold text-white mt-1">{value}</p>
-            {trend && <p className="text-xs text-gray-500 mt-1 font-medium">{trend}</p>}
+            {loading ? (
+                <div className="mt-2 h-8 w-16 bg-gray-700/60 rounded animate-pulse" />
+            ) : (
+                <p className="text-2xl font-bold text-white mt-1">{value}</p>
+            )}
+            {trend && !loading && <p className="text-xs text-gray-500 mt-1 font-medium">{trend}</p>}
+            {loading && <div className="mt-1 h-3 w-24 bg-gray-800/60 rounded animate-pulse" />}
         </div>
         <div className="h-12 w-12 rounded-full bg-black/40 border border-gray-700 flex items-center justify-center text-gray-500 group-hover:text-[#ec028b] group-hover:border-[#ec028b]/30 transition-all">
             <Icon className="h-6 w-6" />
@@ -72,6 +77,23 @@ const EmployeeHomepage: React.FC = () => {
     const [activity, setActivity] = useState<{ user: string; action: string; target: string; time: string }[]>([]);
     const [activityLoading, setActivityLoading] = useState(true);
 
+    const [dashboardStats, setDashboardStats] = useState({
+        activeProjects: 0,
+        activeProjectsTrend: '',
+        tasksDue: 0,
+        tasksOverdue: 0,
+        pendingQuotesCount: 0,
+        pendingQuotesValue: 0,
+        unreadMessages: 0,
+    });
+    const [statsLoading, setStatsLoading] = useState(true);
+
+    const formatQuoteValue = (val: number) => {
+        if (val === 0) return '$0';
+        if (val >= 1000) return `$${(val / 1000).toFixed(1)}k`;
+        return `$${val.toLocaleString()}`;
+    };
+
     const timeAgo = (dateString: string) => {
         if (!dateString) return 'Just now';
         const diff = Date.now() - new Date(dateString).getTime();
@@ -84,7 +106,7 @@ const EmployeeHomepage: React.FC = () => {
     };
 
     useEffect(() => {
-        const unsubscribe = projectService.subscribe((projects: any[]) => {
+        const unsubscribe = projectService.subscribeToRecentActivity((projects: any[]) => {
             const sorted = [...projects].sort((a, b) =>
                 new Date(b.updated_at || b.created_at || 0).getTime() -
                 new Date(a.updated_at || a.created_at || 0).getTime()
@@ -100,7 +122,16 @@ const EmployeeHomepage: React.FC = () => {
             setActivity(mapped);
             setActivityLoading(false);
         });
-        return () => unsubscribe();
+
+        const unsubStats = dashboardService.subscribeToStats((stats) => {
+            setDashboardStats(stats);
+            setStatsLoading(false);
+        });
+
+        return () => {
+            unsubscribe();
+            unsubStats();
+        };
     }, []);
 
     const schedule = [
@@ -134,10 +165,33 @@ const EmployeeHomepage: React.FC = () => {
         >
             {/* --- STATS OVERVIEW --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatCard label="Active Projects" value="12" icon={BriefcaseIcon} trend="+2 this week" />
-                <StatCard label="Tasks Due" value="8" icon={ListBulletIcon} trend="3 overdue" />
-                <StatCard label="Pending Quotes" value="$42.5k" icon={DocumentTextIcon} trend="4 waiting" />
-                <StatCard label="Unread Msgs" value="14" icon={ChatBubbleLeftRightIcon} />
+                <StatCard
+                    label="Active Projects"
+                    value={String(dashboardStats.activeProjects)}
+                    icon={BriefcaseIcon}
+                    trend={dashboardStats.activeProjectsTrend}
+                    loading={statsLoading}
+                />
+                <StatCard
+                    label="Tasks Due"
+                    value={String(dashboardStats.tasksDue)}
+                    icon={ListBulletIcon}
+                    trend={dashboardStats.tasksOverdue > 0 ? `${dashboardStats.tasksOverdue} overdue` : 'All on track'}
+                    loading={statsLoading}
+                />
+                <StatCard
+                    label="Pending Quotes"
+                    value={formatQuoteValue(dashboardStats.pendingQuotesValue)}
+                    icon={DocumentTextIcon}
+                    trend={`${dashboardStats.pendingQuotesCount} waiting`}
+                    loading={statsLoading}
+                />
+                <StatCard
+                    label="Unread Msgs"
+                    value={String(dashboardStats.unreadMessages)}
+                    icon={ChatBubbleLeftRightIcon}
+                    loading={statsLoading}
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
