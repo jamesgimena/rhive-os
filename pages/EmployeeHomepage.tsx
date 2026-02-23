@@ -18,6 +18,7 @@ import { PAGE_GROUPS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useMockDB } from '../contexts/MockDatabaseContext';
 import { projectService, dashboardService } from '../lib/firebaseService';
+import WeatherForecastStrip from '../components/WeatherForecastStrip';
 
 // Compact Session Widget
 const SessionWidget = () => {
@@ -145,7 +146,11 @@ const EmployeeHomepage: React.FC = () => {
             title={page?.name || 'Employee Homepage'}
             description="Welcome back. Here is your daily command center."
             headerAction={
-                <div className="flex space-x-3">
+                <div className="flex items-center space-x-3">
+                    {/* 7-Day Weather Strip */}
+                    <WeatherForecastStrip />
+                    {/* Divider */}
+                    <div className="h-6 w-[1px] bg-gray-700/60" />
                     <button
                         onClick={() => setActivePageId('E-SIM-GUIDE')}
                         className="flex items-center px-4 py-2 bg-gray-900/50 border border-gray-700 text-gray-400 rounded-full hover:bg-[#ec028b]/10 hover:text-[#ec028b] hover:border-[#ec028b]/50 transition-all text-sm font-medium"
