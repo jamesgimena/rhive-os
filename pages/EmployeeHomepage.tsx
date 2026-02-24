@@ -159,7 +159,7 @@ const EmployeeHomepage: React.FC = () => {
                         Simulation Guide
                     </button>
                     <button
-                        onClick={() => setActivePageId('E-G-01')}
+                        onClick={() => setActivePageId('E-02')}
                         className="group flex items-center px-4 py-2 bg-black/40 border border-[#ec028b] rounded-full hover:bg-[#ec028b] hover:text-white text-[#ec028b] transition-all duration-300 shadow-[0_0_10px_rgba(236,2,139,0.2)] hover:shadow-[0_0_20px_rgba(236,2,139,0.5)]"
                     >
                         <MagnifyingGlassIcon className="w-5 h-5 mr-2" />

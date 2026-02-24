@@ -164,10 +164,28 @@ export const projectService = {
     // Creates Project and related sub-collections automatically
     createFullProject: async (input: ProjectInput) => {
         try {
+            // 1. Create the Property entry first
+            const propertyData = {
+                address_full: `${input.property.address}, ${input.property.city}, ${input.property.state} ${input.property.zip}`,
+                property_address: input.property.address,
+                city: input.property.city,
+                state: input.property.state,
+                zip: input.property.zip,
+                latitude: input.property.latitude,
+                longitude: input.property.longitude,
+                type: input.type,
+                features: []
+            };
+
+            const propertyResult = await firestoreService.addDocument('properties', propertyData);
+            if (!propertyResult.success) throw new Error(propertyResult.error);
+            const propertyId = propertyResult.id;
+
+            // 2. Create the Project and link to property
             // Remove undefined values which Firestore doesn't support
             const projectData = JSON.parse(JSON.stringify(mapProjectToSnakeCase(input)));
+            projectData.property_id = propertyId; // LINK to the new property node
 
-            // AUTO-CREATES 'projects' collection if missing
             const projectResult = await firestoreService.addDocument('project', projectData);
             if (!projectResult.success) throw new Error(projectResult.error);
             const projectId = projectResult.id;
@@ -177,6 +195,7 @@ export const projectService = {
                     // AUTO-CREATES 'contacts' collection if missing
                     firestoreService.addDocument('contacts', {
                         project_id: projectId,
+                        property_id: propertyId, // Also link contact to property
                         first_name: contact.firstName,
                         last_name: contact.lastName,
                         email: contact.email,
@@ -188,7 +207,7 @@ export const projectService = {
                 await Promise.all(contactPromises);
             }
 
-            return { success: true, projectId };
+            return { success: true, projectId, propertyId };
         } catch (error: any) {
             console.error('Error creating full project:', error);
             return { success: false, error: error.message };
@@ -425,3 +444,13 @@ export const customerService = {
     getAllCustomers: () => contactService.getAll(),
     addCustomer: (data: any) => contactService.create(data),
 };
+
+export const propertyService = {
+    getAll: () => firestoreService.getAllDocuments('properties'),
+    subscribe: (callback: (data: any[]) => void) => firestoreService.subscribeToDocuments('properties', callback),
+    getById: (id: string) => firestoreService.getDocument('properties', id),
+    create: (data: any) => firestoreService.addDocument('properties', data),
+    update: (id: string, data: any) => firestoreService.updateDocument('properties', id, data),
+    delete: (id: string) => firestoreService.deleteDocument('properties', id)
+};
+

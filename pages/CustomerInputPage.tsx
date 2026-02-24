@@ -811,14 +811,12 @@ const CustomerInputPage: React.FC = () => {
                     scheduledInspection: scheduledDetails || undefined
                 }
             });
-            console.log("✅ Project successfully saved to database!");
+            console.log("✅ Project and Property successfully saved to Firebase!");
+            setIsSuccess(true);
         } catch (error) {
             console.error("❌ Failed to save project to database:", error);
             alert(`Failed to save to Firebase: ${error instanceof Error ? error.message : 'Unknown error'}. Check browser console for details.`);
         }
-
-        createProject(projNameStr, projectCategory, propertyData.address, primary.existingUserId || 'U-NEW');
-        setIsSuccess(true);
     };
 
     const handleDeductibleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
