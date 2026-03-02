@@ -63,7 +63,7 @@ const StormAlertWidget: React.FC = () => {
         try {
             const res = await fetch(
                 `${WEATHER_BASE}/currentConditions:lookup?key=${GOOGLE_WEATHER_API_KEY}` +
-                `&location.latitude=${DEFAULT_LAT}&location.longitude=${DEFAULT_LON}&unitsSystem=IMPERIAL`
+                `&location.latitude=${DEFAULT_LAT}&location.longitude=${DEFAULT_LON}&unitsSystem=METRIC`
             );
             if (!res.ok) throw new Error('API error');
             const data = await res.json();

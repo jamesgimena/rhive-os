@@ -45,7 +45,7 @@ const EmployeeTimeoffPage: React.FC = () => {
         try {
             const res = await fetch(
                 `${WEATHER_BASE}/forecast/days:lookup?key=${GOOGLE_WEATHER_API_KEY}` +
-                `&location.latitude=${DEFAULT_LAT}&location.longitude=${DEFAULT_LON}&days=7&unitsSystem=IMPERIAL`
+                `&location.latitude=${DEFAULT_LAT}&location.longitude=${DEFAULT_LON}&days=7&unitsSystem=METRIC`
             );
             if (!res.ok) throw new Error('API error');
             const data = await res.json();
