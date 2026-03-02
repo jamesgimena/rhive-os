@@ -71,6 +71,74 @@ const StatCard = ({ label, value, icon: Icon, trend, loading }: { label: string,
     </div>
 );
 
+// --- Storm Alert Widget (Dynamic) ---
+const GOOGLE_WEATHER_API_KEY = (import.meta as any).env?.VITE_GOOGLE_WEATHER_API_KEY || '';
+const WEATHER_BASE = 'https://weather.googleapis.com/v1';
+const DEFAULT_LAT = 39.7392;
+const DEFAULT_LON = -104.9903;
+
+const STORM_TYPES = new Set([
+    'THUNDERSTORM', 'TORNADO', 'HEAVY_RAIN', 'HAIL', 'FREEZING_RAIN',
+    'HEAVY_SNOW', 'SLEET', 'SHOWERS', 'SCATTERED_SHOWERS',
+]);
+
+const StormAlertWidget = () => {
+    const [storm, setStorm] = useState<{ date: string, desc: string } | null>(null);
+    const { setActivePageId } = useNavigation();
+
+    useEffect(() => {
+        const fetchForecast = async () => {
+            if (!GOOGLE_WEATHER_API_KEY) return;
+            try {
+                const res = await fetch(
+                    `${WEATHER_BASE}/forecast/days:lookup?key=${GOOGLE_WEATHER_API_KEY}` +
+                    `&location.latitude=${DEFAULT_LAT}&location.longitude=${DEFAULT_LON}&days=7&unitsSystem=IMPERIAL`
+                );
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // Find first storm in forecast
+                const firstStorm = data.forecastDays?.find((d: any) => {
+                    const cond = d.daytimeForecast?.weatherCondition?.type || '';
+                    const thunderProb = d.daytimeForecast?.thunderstormProbability ?? 0;
+                    return STORM_TYPES.has(cond) || thunderProb >= 40;
+                });
+
+                if (firstStorm) {
+                    const date = new Date(firstStorm.displayDate.year, firstStorm.displayDate.month - 1, firstStorm.displayDate.day);
+                    setStorm({
+                        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                        desc: firstStorm.daytimeForecast.weatherCondition.description.text
+                    });
+                }
+            } catch (e) {
+                // ignore
+            }
+        };
+        fetchForecast();
+    }, []);
+
+    if (!storm) return null;
+
+    return (
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 flex items-center justify-between backdrop-blur-sm animate-pulse shadow-[0_0_15px_rgba(249,115,22,0.1)]">
+            <div className="flex items-center">
+                <BoltIcon className="w-8 h-8 text-orange-500 mr-3" />
+                <div>
+                    <p className="text-sm font-bold text-white">Storm Alert • {storm.date}</p>
+                    <p className="text-xs text-orange-200/70 truncate w-40">{storm.desc}</p>
+                </div>
+            </div>
+            <button
+                onClick={() => setActivePageId('E-04')}
+                className="text-[10px] bg-black border border-orange-500/40 text-orange-400 hover:bg-orange-500 hover:text-white px-3 py-1.5 rounded-full font-bold transition-all uppercase tracking-wider"
+            >
+                View
+            </button>
+        </div>
+    );
+};
+
 const EmployeeHomepage: React.FC = () => {
     const page = PAGE_GROUPS.flatMap(g => g.pages).find(p => p.id === 'E-01');
     const { setActivePageId } = useNavigation();
@@ -308,20 +376,18 @@ const EmployeeHomepage: React.FC = () => {
                                 </div>
                             ))}
                         </div>
-                        <Button variant="secondary" size="sm" className="w-full mt-2">View Full Calendar</Button>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            className="w-full mt-2"
+                            onClick={() => setActivePageId('E-04')}
+                        >
+                            View Full Calendar
+                        </Button>
                     </Card>
 
-                    {/* Pinned/Weather Widget */}
-                    <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-4 flex items-center justify-between backdrop-blur-sm">
-                        <div className="flex items-center">
-                            <BoltIcon className="w-8 h-8 text-gray-500 mr-3" />
-                            <div>
-                                <p className="text-sm font-bold text-white">Storm Alert</p>
-                                <p className="text-xs text-gray-400">Hail expected in Denver Area</p>
-                            </div>
-                        </div>
-                        <span className="text-xs bg-black border border-gray-600 text-gray-300 px-2 py-1 rounded">View</span>
-                    </div>
+                    {/* Pinned/Weather Widget (Dynamic) */}
+                    <StormAlertWidget />
                 </div>
             </div>
         </PageContainer>
