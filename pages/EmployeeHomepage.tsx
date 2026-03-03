@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import PageContainer from '../components/PageContainer';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -12,13 +12,374 @@ import {
     ChatBubbleLeftRightIcon,
     DocumentDuplicateIcon,
     DocumentTextIcon,
-    BoltIcon
+    BoltIcon,
+    MapPinIcon,
+    XIcon,
+    ArrowRightIcon,
 } from '../components/icons';
 import { PAGE_GROUPS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useMockDB } from '../contexts/MockDatabaseContext';
-import { projectService, dashboardService } from '../lib/firebaseService';
+import { projectService, dashboardService, firestoreService } from '../lib/firebaseService';
 import WeatherForecastStrip from '../components/WeatherForecastStrip';
+
+// ─── Global Dispatch Inline Search ────────────────────────────────────────────
+const GlobalDispatchSearch: React.FC = () => {
+    const { setActivePageId } = useNavigation();
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState('');
+    const [contacts, setContacts] = useState<any[]>([]);
+    const [projects, setProjects] = useState<any[]>([]);
+    const [properties, setProperties] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Subscribe to all three collections once
+    useEffect(() => {
+        const unsubContacts = firestoreService.subscribeToDocuments('contacts', (data) => {
+            setContacts(data);
+            setLoading(false);
+        });
+        const unsubProjects = projectService.subscribe((data) => {
+            setProjects(data);
+        });
+        const unsubProps = firestoreService.subscribeToDocuments('properties', (data) => {
+            setProperties(data);
+        });
+        return () => { unsubContacts(); unsubProjects(); unsubProps(); };
+    }, []);
+
+    // Close when clicking outside
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+                setOpen(false);
+                setQuery('');
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const lq = query.toLowerCase().trim();
+
+    const filteredContacts = lq
+        ? contacts.filter(c => {
+            const name = `${c.first_name || ''} ${c.last_name || ''} ${c.name || ''}`.toLowerCase();
+            return name.includes(lq) || (c.email || '').toLowerCase().includes(lq) || (c.phone || '').includes(lq);
+        })
+        : contacts.slice(0, 4);
+
+    const filteredProjects = lq
+        ? projects.filter(p =>
+            (p.name || '').toLowerCase().includes(lq) ||
+            (p.current_stage || '').toLowerCase().includes(lq) ||
+            (p.property_address || '').toLowerCase().includes(lq)
+        )
+        : projects.slice(0, 4);
+
+    const filteredProperties = lq
+        ? properties.filter(p =>
+            (p.address_full || '').toLowerCase().includes(lq) ||
+            (p.city || '').toLowerCase().includes(lq) ||
+            (p.type || '').toLowerCase().includes(lq)
+        )
+        : properties.slice(0, 3);
+
+    const hasResults = filteredContacts.length + filteredProjects.length + filteredProperties.length > 0;
+    const totalCount = filteredContacts.length + filteredProjects.length + filteredProperties.length;
+
+    const handleOpen = () => {
+        setOpen(true);
+        setTimeout(() => inputRef.current?.focus(), 50);
+    };
+
+    const go = (pageId: string) => {
+        setOpen(false);
+        setQuery('');
+        setActivePageId(pageId);
+    };
+
+    const stageBadge = (stage?: string) => {
+        const s = (stage || '').toLowerCase();
+        if (s.includes('lead')) return '#eab308';
+        if (s.includes('quote')) return '#60a5fa';
+        if (s.includes('sign')) return '#c084fc';
+        if (s.includes('install') || s.includes('progress')) return '#fb923c';
+        if (s.includes('complet') || s.includes('paid')) return '#4ade80';
+        return '#6b7280';
+    };
+
+    return (
+        <div ref={wrapperRef} style={{ position: 'relative' }}>
+            {/* ── Trigger Button (collapsed state) ── */}
+            {!open && (
+                <button
+                    onClick={handleOpen}
+                    id="global-dispatch-btn"
+                    className="group flex items-center px-4 py-2 bg-black/40 border border-[#ec028b] rounded-full hover:bg-[#ec028b] hover:text-white text-[#ec028b] transition-all duration-300 shadow-[0_0_10px_rgba(236,2,139,0.2)] hover:shadow-[0_0_20px_rgba(236,2,139,0.5)]"
+                >
+                    <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
+                    <span className="font-semibold text-sm">Global Dispatch</span>
+                </button>
+            )}
+
+            {/* ── Expanded Search Input ── */}
+            {open && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                        display: 'flex', alignItems: 'center',
+                        background: 'rgba(0,0,0,0.6)',
+                        border: '1px solid rgba(236,2,139,0.6)',
+                        borderRadius: 24,
+                        padding: '6px 14px',
+                        gap: 8,
+                        boxShadow: '0 0 16px rgba(236,2,139,0.18)',
+                        backdropFilter: 'blur(12px)',
+                        minWidth: 280,
+                    }}>
+                        <MagnifyingGlassIcon style={{ width: 16, height: 16, color: '#ec028b', flexShrink: 0 }} />
+                        <input
+                            ref={inputRef}
+                            id="global-dispatch-input"
+                            type="text"
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            placeholder="Search contacts, projects, properties…"
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                outline: 'none',
+                                color: '#ffffff',
+                                fontSize: 13,
+                                fontWeight: 500,
+                                width: '100%',
+                                letterSpacing: '0.01em',
+                            }}
+                        />
+                        {query && (
+                            <button
+                                onClick={() => setQuery('')}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', display: 'flex', padding: 0 }}
+                            >
+                                <XIcon style={{ width: 14, height: 14 }} />
+                            </button>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => { setOpen(false); setQuery(''); }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            )}
+
+            {/* ── Dropdown Results Panel ── */}
+            {open && (
+                <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 10px)',
+                    right: 0,
+                    width: 420,
+                    maxHeight: 520,
+                    overflowY: 'auto',
+                    background: 'linear-gradient(140deg, rgba(6,4,14,0.98) 0%, rgba(12,6,22,0.98) 100%)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 16,
+                    boxShadow: '0 24px 60px rgba(0,0,0,0.9), 0 0 20px rgba(236,2,139,0.08)',
+                    backdropFilter: 'blur(24px)',
+                    zIndex: 99999,
+                    overflow: 'hidden',
+                }}>
+                    {/* Header */}
+                    <div style={{
+                        padding: '12px 16px 10px',
+                        borderBottom: '1px solid rgba(255,255,255,0.07)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#ec028b' }}>
+                            Global Dispatch
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: loading ? '#eab308' : '#4ade80' }} />
+                            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                {loading ? 'Syncing' : `${totalCount} results`}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style={{ maxHeight: 460, overflowY: 'auto' }}>
+
+                        {/* ── Contacts ── */}
+                        {filteredContacts.length > 0 && (
+                            <div>
+                                <div style={{ padding: '8px 16px 4px', fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
+                                    👤 People &amp; Contacts
+                                </div>
+                                {filteredContacts.slice(0, 5).map((c: any) => {
+                                    const name = c.first_name || c.last_name
+                                        ? `${c.first_name || ''} ${c.last_name || ''}`.trim()
+                                        : c.name || 'Unknown';
+                                    return (
+                                        <div
+                                            key={c.id}
+                                            onClick={() => go('E-24')}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: 12,
+                                                padding: '10px 16px',
+                                                cursor: 'pointer',
+                                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                transition: 'background 0.15s',
+                                            }}
+                                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(236,2,139,0.07)')}
+                                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                        >
+                                            <div style={{
+                                                width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+                                                background: 'rgba(236,2,139,0.1)', border: '1px solid rgba(236,2,139,0.25)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}>
+                                                <UserIcon style={{ width: 16, height: 16, color: '#ec028b' }} />
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
+                                                <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {[c.role, c.email].filter(Boolean).join(' · ')}
+                                                </p>
+                                            </div>
+                                            <ArrowRightIcon style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* ── Projects ── */}
+                        {filteredProjects.length > 0 && (
+                            <div>
+                                <div style={{ padding: '8px 16px 4px', fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
+                                    💼 Active Projects
+                                </div>
+                                {filteredProjects.slice(0, 5).map((p: any) => (
+                                    <div
+                                        key={p.id}
+                                        onClick={() => go('E-05')}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 12,
+                                            padding: '10px 16px',
+                                            cursor: 'pointer',
+                                            borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                            transition: 'background 0.15s',
+                                        }}
+                                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(236,2,139,0.07)')}
+                                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                    >
+                                        <div style={{
+                                            width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+                                            background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.25)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            <BriefcaseIcon style={{ width: 16, height: 16, color: '#60a5fa' }} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name || 'Unnamed Project'}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                                {p.current_stage && (
+                                                    <span style={{
+                                                        fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+                                                        color: stageBadge(p.current_stage), border: `1px solid ${stageBadge(p.current_stage)}44`,
+                                                        background: `${stageBadge(p.current_stage)}18`, borderRadius: 4, padding: '1px 5px',
+                                                    }}>{p.current_stage}</span>
+                                                )}
+                                                {p.property_address && (
+                                                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.property_address}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <ArrowRightIcon style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* ── Properties ── */}
+                        {filteredProperties.length > 0 && (
+                            <div>
+                                <div style={{ padding: '8px 16px 4px', fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
+                                    📍 Properties &amp; Sites
+                                </div>
+                                {filteredProperties.slice(0, 4).map((p: any) => {
+                                    const addr = p.address_full || [p.property_address, p.city, p.state].filter(Boolean).join(', ') || 'Unknown Address';
+                                    return (
+                                        <div
+                                            key={p.id}
+                                            onClick={() => go('E-12')}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: 12,
+                                                padding: '10px 16px',
+                                                cursor: 'pointer',
+                                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                transition: 'background 0.15s',
+                                            }}
+                                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(236,2,139,0.07)')}
+                                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                        >
+                                            <div style={{
+                                                width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+                                                background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}>
+                                                <MapPinIcon style={{ width: 16, height: 16, color: '#4ade80' }} />
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{addr}</p>
+                                                {p.type && (
+                                                    <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.type}</p>
+                                                )}
+                                            </div>
+                                            <ArrowRightIcon style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Empty state */}
+                        {!loading && !hasResults && (
+                            <div style={{ padding: '28px 16px', textAlign: 'center' }}>
+                                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
+                                    {lq ? `No results for "${query}"` : 'No records in Firebase yet.'}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* View all link */}
+                        {hasResults && (
+                            <div
+                                onClick={() => go('E-02')}
+                                style={{
+                                    padding: '10px 16px',
+                                    borderTop: '1px solid rgba(255,255,255,0.07)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                    cursor: 'pointer',
+                                    fontSize: 11, fontWeight: 700, color: '#ec028b',
+                                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                                    transition: 'background 0.15s',
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(236,2,139,0.07)')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            >
+                                Open Full Dispatch &nbsp;→
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 // Compact Session Widget
 const SessionWidget = () => {
@@ -317,13 +678,7 @@ const EmployeeHomepage: React.FC = () => {
                         <BoltIcon className="w-5 h-5 mr-2" />
                         Simulation Guide
                     </button>
-                    <button
-                        onClick={() => setActivePageId('E-02')}
-                        className="group flex items-center px-4 py-2 bg-black/40 border border-[#ec028b] rounded-full hover:bg-[#ec028b] hover:text-white text-[#ec028b] transition-all duration-300 shadow-[0_0_10px_rgba(236,2,139,0.2)] hover:shadow-[0_0_20px_rgba(236,2,139,0.5)]"
-                    >
-                        <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
-                        <span className="font-semibold text-sm">Global Dispatch</span>
-                    </button>
+                    <GlobalDispatchSearch />
                 </div>
             }
         >
