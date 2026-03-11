@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { CircuitryBackground } from '../components/CircuitryBackground';
 import { BriefcaseIcon, MapPinIcon } from '../components/icons';
-import { cn } from '../lib/utils';
+import { cn, getStagePageId } from '../lib/utils';
 import Card from '../components/Card';
 import { projectService } from '../lib/firebaseService';
 
@@ -36,7 +36,7 @@ interface FirebaseProject {
 }
 
 const EmployeePipelinePage: React.FC = () => {
-    const { setActivePageId } = useNavigation();
+    const { setActivePageId, setSelectedProjectId } = useNavigation();
     const [projects, setProjects] = useState<FirebaseProject[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -49,8 +49,9 @@ const EmployeePipelinePage: React.FC = () => {
         return () => unsubscribe();
     }, []);
 
-    const handleCardClick = (projectId: string) => {
-        setActivePageId('E-26'); // Navigate to Lead page
+    const handleCardClick = (project: FirebaseProject) => {
+        setSelectedProjectId(project.id);
+        setActivePageId(getStagePageId(project.current_stage));
     };
 
     const getProjectsForStage = (stage: typeof PIPELINE_STAGES[number]) => {
@@ -126,7 +127,7 @@ const EmployeePipelinePage: React.FC = () => {
                                         key={project.id}
                                         className="mb-4 cursor-pointer hover:border-[#ec028b]/80 group relative overflow-hidden active:scale-95 transition-transform"
                                     >
-                                        <div onClick={() => handleCardClick(project.id)}>
+                                        <div onClick={() => handleCardClick(project)}>
                                             {/* Glow effect */}
                                             <div className="absolute top-0 right-0 w-16 h-16 bg-[#ec028b]/5 blur-2xl group-hover:bg-[#ec028b]/10 transition-colors pointer-events-none" />
 
