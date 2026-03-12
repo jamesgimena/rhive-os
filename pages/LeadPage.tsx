@@ -30,7 +30,12 @@ const stageBadgeColor = (stage?: string) => {
 };
 
 const LeadPage: React.FC = () => {
-    const { selectedProjectId, setSelectedProjectId, setActivePageId } = useNavigation();
+    const { 
+        selectedProjectId, 
+        setSelectedProjectId, 
+        setActivePageId, 
+        setSelectedAccountId 
+    } = useNavigation();
     
     // Check if we arrived here WITH a selected project.
     // If we did, and it is a "Lead" stage, we should show the Lead detail page.
@@ -71,6 +76,12 @@ const LeadPage: React.FC = () => {
             // Navigate to the correct page for this specific pipeline stage
             setActivePageId(targetPage);
         }
+    };
+
+    const handleViewAccount = (userId: string) => {
+        if (!userId || userId === 'unassigned') return;
+        setSelectedAccountId(userId);
+        setActivePageId('E-08'); // Company Profile
     };
 
     // --- LIST VIEW LOGIC ---
@@ -171,7 +182,7 @@ const LeadPage: React.FC = () => {
                                     <Button 
                                         variant="secondary" 
                                         className="w-full justify-center"
-                                        onClick={() => setActivePageId('E-08')}
+                                        onClick={() => handleViewAccount(currentProject.user_id || currentProject.account_id)}
                                     >
                                         <UserIcon className="w-5 h-5 mr-2" />
                                         View Account
