@@ -53,7 +53,9 @@ export const CommercialLightbox: React.FC<CommercialLightboxProps> = ({ isOpen, 
 
     const handleSelectPackage = (packageId: string) => {
         onClose();
-        setActivePageId('P-04'); // Note: We will handle anchor routing in P-04
+        setTimeout(() => {
+            document.getElementById('commercial')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     };
 
     return (

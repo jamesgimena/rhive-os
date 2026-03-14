@@ -53,7 +53,9 @@ export const IceLightbox: React.FC<IceLightboxProps> = ({ isOpen, onClose }) => 
 
     const handleSelectPackage = (packageId: string) => {
         onClose();
-        setActivePageId('P-04'); // Route to packages page
+        setTimeout(() => {
+            document.getElementById('ice')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     };
 
     return (

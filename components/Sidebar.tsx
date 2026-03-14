@@ -115,32 +115,75 @@ export const Sidebar: React.FC<SidebarProps> = ({ pageGroups }) => {
             </div>
 
             <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
-                {userGroups.map((group, groupIdx) => (
-                    <div key={groupIdx} className="mb-6 px-4">
-                        <div className="space-y-1">
-                            {group.pages.map(page => (
-                                <button
-                                    key={page.id}
-                                    onClick={() => setActivePageId(page.id)}
-                                    className={cn(
-                                        "flex items-center w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                                        activePageId === page.id
-                                            ? "bg-[#ec028b]/20 text-[#ec028b] border border-[#ec028b]/30"
-                                            : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                                    )}
-                                >
-                                    <span className="mr-3 opacity-80">
-                                        {getIconForPage(page.id)}
-                                    </span>
-                                    <span className="truncate">{page.name}</span>
-                                </button>
-                            ))}
+                {userGroups.map((group, groupIdx) => {
+                    // Group pages by parent
+                    const topLevelPages = group.pages.filter(p => !p.parentId);
+                    const childPages = group.pages.filter(p => p.parentId);
+
+                    return (
+                        <div key={groupIdx} className="mb-6 px-4">
+                            <div className="space-y-1">
+                                {topLevelPages.map(page => {
+                                    const children = childPages.filter(c => c.parentId === page.id);
+                                    const hasChildren = children.length > 0;
+                                    const isActive = activePageId === page.id || children.some(c => c.id === activePageId);
+
+                                    return (
+                                        <div key={page.id} className="relative group/navitem">
+                                            <button
+                                                onClick={() => setActivePageId(page.id)}
+                                                className={cn(
+                                                    "flex items-center w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                                                    isActive
+                                                        ? "bg-[#ec028b]/20 text-[#ec028b] border border-[#ec028b]/30"
+                                                        : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                                                )}
+                                            >
+                                                <span className="mr-3 opacity-80">
+                                                    {getIconForPage(page.id)}
+                                                </span>
+                                                <span className="truncate flex-1 text-left">{page.name}</span>
+                                                {hasChildren && (
+                                                    <div className="ml-auto opacity-50 group-hover/navitem:opacity-100 transition-opacity">
+                                                        <svg className="w-4 h-4 transform group-hover/navitem:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </button>
+
+                                            {/* Sub-menu Dropdown / Accordion */}
+                                            {hasChildren && (
+                                                <div className="overflow-hidden transition-all duration-300 max-h-0 group-hover/navitem:max-h-96 opacity-0 group-hover/navitem:opacity-100 pl-8 pt-1 space-y-1">
+                                                    {children.map(child => (
+                                                        <button
+                                                            key={child.id}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setActivePageId(child.id);
+                                                            }}
+                                                            className={cn(
+                                                                "flex items-center w-full px-4 py-2 rounded-md text-xs font-medium transition-all duration-200 border-l border-transparent hover:border-[#ec028b]/50",
+                                                                activePageId === child.id
+                                                                    ? "text-[#ec028b] bg-white/5"
+                                                                    : "text-gray-500 hover:text-gray-200 hover:bg-white/5"
+                                                            )}
+                                                        >
+                                                            <span className="truncate">{child.name}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {groupIdx < userGroups.length - 1 && (
+                                <div className="my-4 border-t border-gray-800/50 mx-2" />
+                            )}
                         </div>
-                        {groupIdx < userGroups.length - 1 && (
-                            <div className="my-4 border-t border-gray-800/50 mx-2" />
-                        )}
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             <div className={cn("p-4 border-t transition-colors duration-500", isDark ? "border-white/5 bg-black/40" : "border-black/5 bg-white/40")}>

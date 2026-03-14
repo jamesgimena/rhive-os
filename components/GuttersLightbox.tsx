@@ -36,24 +36,14 @@ export const GuttersLightbox: React.FC<GuttersLightboxProps> = ({ isOpen, onClos
                 "Heavy-Duty Stamped Hangers"
             ],
             recommended: true
-        },
-        {
-            tier: "Complete Defense",
-            name: "Premium Leaf Guard System",
-            system: "Micro-Mesh / Hooded Systems",
-            warranty: "No-Clog Guarantee",
-            highlights: [
-                "Surgical-Grade Stainless Mesh",
-                "Eliminates Bi-Annual Cleaning",
-                "Handles High-Flow Rain Events",
-                "Strengthens Entire Gutter System"
-            ]
         }
     ];
 
     const handleSelectPackage = (packageId: string) => {
         onClose();
-        setActivePageId('P-04'); // Route to packages page
+        setTimeout(() => {
+            document.getElementById('gutters')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     };
 
     return (
@@ -78,7 +68,7 @@ export const GuttersLightbox: React.FC<GuttersLightboxProps> = ({ isOpen, onClos
                 </div>
 
                 <div className="flex-grow overflow-y-auto p-6 sm:p-8 relative z-10 custom-scrollbar">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                         {packages.map((pkg, idx) => (
                             <div
                                 key={idx}

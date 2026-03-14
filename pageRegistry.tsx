@@ -8,8 +8,15 @@ import CurrentWebsitePage from './pages/CurrentWebsitePage'; // P-00a
 import Web2Page from './pages/Web2Page'; // P-00b
 import AboutUsPage from './pages/AboutUsPage'; // P-01
 import OurServicesPage from './pages/OurServicesPage'; // P-02
+import AsphaltRoofingPage from './pages/AsphaltRoofingPage'; // P-02a
+import MembraneRoofingPage from './pages/MembraneRoofingPage'; // P-02b
+import RoofUpgradesPage from './pages/RoofUpgradesPage'; // P-02c / P-02d
+import DurationPerformancePage from './pages/DurationPerformancePage'; // P-02a-1
+import DurationFlexPage from './pages/DurationFlexPage'; // P-02a-2
+import DesignerPackagePage from './pages/DesignerPackagePage'; // P-02a-3
+import PremiumDesignerPackagePage from './pages/PremiumDesignerPackagePage'; // P-02a-4
+import DurationSpecificationPrint from './pages/DurationSpecificationPrint'; // P-02a-SPEC
 import OurProcessPage from './pages/OurProcessPage'; // P-03
-import ServicePackagesPage from './pages/ServicePackagesPage'; // P-04
 import FinancingPage from './pages/FinancingPage'; // P-08
 import ContactPage from './pages/ContactPage'; // P-05
 import PasswordResetPage from './pages/PasswordResetPage'; // P-07
@@ -48,6 +55,7 @@ import SupplierProfilePage from './pages/SupplierProfilePage'; // S-04
 import CustomerTrackerPage from './pages/CustomerTrackerPage'; // C-Tracker
 import SimulationGuidePage from './pages/SimulationGuidePage'; // (Simulation)
 import RHIVEBrandingPage from './pages/RHIVEBrandingPage'; // E-39
+import InsurancePage from './pages/InsurancePage'; // P-13
 
 // Specific stage pages
 import LeadPage from './pages/LeadPage'; // E-26
@@ -76,8 +84,17 @@ export const pageComponentMap: Record<string, React.FC> = {
   'P-00b': Web2Page,
   'P-01': AboutUsPage,
   'P-02': OurServicesPage,
+  'P-02a': AsphaltRoofingPage,
+  'P-02a-1': DurationPerformancePage,
+  'P-02a-2': DurationFlexPage,
+  'P-02a-3': DesignerPackagePage,
+  'P-02a-4': PremiumDesignerPackagePage,
+  'P-02a-SPEC': DurationSpecificationPrint,
+  'P-02b': MembraneRoofingPage,
+  'P-02c': RoofUpgradesPage,
+  'P-02d': RoofUpgradesPage,
+  'P-02e': () => <Placeholder name="Additional Trades" />,
   'P-03': OurProcessPage,
-  'P-04': ServicePackagesPage,
   'P-05': ContactPage,
   'P-06': LoginPage,
   'P-07': PasswordResetPage,
@@ -86,6 +103,7 @@ export const pageComponentMap: Record<string, React.FC> = {
   'P-10': PublicCareersPage,
   'P-11': JobApplicationPage,
   'P-12': EstimateToolPage,
+  'P-13': InsurancePage,
 
   // Admin (Employee World Section 1)
   'A-01': () => <Placeholder name="Admin Admin Dashboard" />,

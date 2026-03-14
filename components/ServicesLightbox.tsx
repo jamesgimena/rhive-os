@@ -124,7 +124,9 @@ export const ServicesLightbox: React.FC<ServicesLightboxProps> = ({ isOpen, onCl
                                 <button
                                     onClick={() => {
                                         onClose();
-                                        setActivePageId('P-04');
+                                        setTimeout(() => {
+                                            document.getElementById('residential')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        }, 100);
                                     }}
                                     className={`w-full py-4 text-xs font-bold uppercase tracking-widest transition-all ${pkg.recommended ? 'bg-[var(--rhive-pink)] text-white hover:bg-white hover:text-black' : 'border border-white/20 text-white hover:border-[var(--rhive-pink)] hover:text-[var(--rhive-pink)]'}`}
                                     style={{ clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)' }}>

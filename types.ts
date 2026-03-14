@@ -228,6 +228,7 @@ export interface Page {
   name: string;
   userType: UserType | 'All';
   description?: string;
+  parentId?: string;
 }
 
 export interface PageGroup {

@@ -194,3 +194,11 @@ When I ask you to build a feature:
 3.  **Apply the Aesthetic:** Use `#ec028b` borders and Chamfered edges.
 4.  **Write the Code:** Use Strict TypeScript interfaces defined in `src/types/schema.ts`.
 5.  **Verify:** Ask yourself, "Would Michael approve this, or is it too generic?"
+
+## 8. VISUAL VERIFICATION PROTOCOL (MANDATORY)
+* **Full-Page Coverage:** When submitting a page for review, screenshots must capture the entire vertical length of the page. Take multiple screenshots (one for each section/level down) so the user has full context to analyze.
+* **No Cropped Heroes:** Do not submit only the top hero section when a page has multiple data blocks below it.
+* **Video vs. Screenshots:** 
+  * **Primary:** Use **Screenshots** for design review (so the user can easily export them to external analysis tools).
+  * **Secondary:** Use **Video (.webp)** strictly to demonstrate interactive elements, cool animations, or complex state changes. 
+* **Efficiency:** Avoid taking an excessive or wasteful number of repeated screenshots. Scroll efficiently and capture exactly what is needed for complete coverage.
