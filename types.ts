@@ -197,20 +197,30 @@ export interface Property {
 }
 
 export type ProjectStage = 
-    | 'Lead' 
-    | 'Estimate' 
-    | 'Quote' 
-    | 'Sign & Verify' 
-    | 'Schedule' 
-    | 'Pre-Installation' 
-    | 'Install' 
-    | 'Punch List' 
-    | 'Invoicing' 
-    | 'Completed' 
-    | 'Past Customer';
+    | 'Stage 1: LEAD (Intake)'
+    | 'Stage 2: ESTIMATE (Property Data)'
+    | 'Stage 3: QUOTE (Pricing Options)'
+    | 'Stage 4: SIGN & VERIFY (Agreement)'
+    | 'Stage 5: SCHEDULE (Queue)'
+    | 'Stage 6: PRE-INSTALLATION (Prep)'
+    | 'Stage 7: INSTALL (In Progress)'
+    | 'Stage 8: PUNCH LIST (Quality Control)'
+    | 'Stage 9: INVOICING (Balance Due)'
+    | 'Stage 10: COMPLETED (Paid)'
+    | 'Stage 11: PAST CUSTOMER (Referral System)';
 
 export const PROJECT_STAGES_ORDER: ProjectStage[] = [
-    'Lead', 'Estimate', 'Quote', 'Sign & Verify', 'Schedule', 'Pre-Installation', 'Install', 'Punch List', 'Invoicing', 'Completed', 'Past Customer'
+    'Stage 1: LEAD (Intake)',
+    'Stage 2: ESTIMATE (Property Data)',
+    'Stage 3: QUOTE (Pricing Options)',
+    'Stage 4: SIGN & VERIFY (Agreement)',
+    'Stage 5: SCHEDULE (Queue)',
+    'Stage 6: PRE-INSTALLATION (Prep)',
+    'Stage 7: INSTALL (In Progress)',
+    'Stage 8: PUNCH LIST (Quality Control)',
+    'Stage 9: INVOICING (Balance Due)',
+    'Stage 10: COMPLETED (Paid)',
+    'Stage 11: PAST CUSTOMER (Referral System)'
 ];
 
 export interface Page {
@@ -218,10 +228,12 @@ export interface Page {
     name: string;
     userType: UserType | 'All';
     description?: string;
+    category?: string;
 }
 
 export interface PageGroup {
     userType: UserType | 'All';
+    label?: string;
     pages: Page[];
 }
 

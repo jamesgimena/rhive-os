@@ -142,11 +142,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         </Button>
 
                         <div className="grid grid-cols-2 gap-4 pt-8 border-t border-gray-800/50">
-                            <button className="flex items-center justify-center gap-3 p-4 bg-gray-900/40 border border-gray-800 text-gray-500 text-[9px] font-bold uppercase tracking-[0.3em] hover:border-rhive-pink/50 hover:text-white transition-all rounded-lg group">
+                            <button className="flex items-center justify-center gap-3 p-4 bg-gray-900/40 border border-gray-800 text-gray-500 text-[9px] font-bold uppercase tracking-[0.3em] hover:border-rhive-pink/50 hover:text-white transition-all rounded-full group">
                                 <ZohoIcon className="w-4 h-4 group-hover:text-rhive-pink transition-colors" />
                                 Zoho Auth
                             </button>
-                            <button className="flex items-center justify-center gap-3 p-4 bg-gray-900/40 border border-gray-800 text-gray-500 text-[9px] font-bold uppercase tracking-[0.3em] hover:border-rhive-pink/50 hover:text-white transition-all rounded-lg group">
+                            <button className="flex items-center justify-center gap-3 p-4 bg-gray-900/40 border border-gray-800 text-gray-500 text-[9px] font-bold uppercase tracking-[0.3em] hover:border-rhive-pink/50 hover:text-white transition-all rounded-full group">
                                 <FingerPrintIcon className="w-4 h-4 group-hover:text-rhive-pink transition-colors" />
                                 Biometrics
                             </button>

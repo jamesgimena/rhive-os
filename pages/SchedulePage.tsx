@@ -5,7 +5,8 @@ import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
 import Button from '../components/Button';
 import { PAGE_GROUPS } from '../constants';
-import { DocumentCheckIcon, UserIcon, TruckIcon, ArrowPathIcon } from '../components/icons';
+import { DocumentCheckIcon, UserIcon, TruckIcon, PlusIcon, ChevronRightIcon } from '../components/icons';
+import { cn } from '../lib/utils';
 
 const LogicGate = ({ title, isMet, icon: Icon, actionLabel }: { title: string, isMet: boolean, icon: any, actionLabel: string }) => (
     <div className={`p-4 rounded-xl border transition-all duration-300 flex items-center justify-between ${isMet ? 'bg-green-900/20 border-green-500/30' : 'bg-gray-900/50 border-gray-700'}`}>
@@ -19,7 +20,10 @@ const LogicGate = ({ title, isMet, icon: Icon, actionLabel }: { title: string, i
             </div>
         </div>
         {!isMet ? (
-             <Button size="sm" variant="secondary">{actionLabel}</Button>
+             <Button size="sm" variant="secondary" className="flex items-center gap-2">
+                 <PlusIcon className="w-4 h-4" />
+                 {actionLabel}
+             </Button>
         ) : (
             <DocumentCheckIcon className="w-6 h-6 text-green-500" />
         )}
@@ -27,8 +31,6 @@ const LogicGate = ({ title, isMet, icon: Icon, actionLabel }: { title: string, i
 );
 
 const SchedulePage: React.FC = () => {
-    const page = PAGE_GROUPS.flatMap(g => g.pages).find(p => p.id === 'E-22');
-
     // Simulation State
     const [stageRequirements, setStageRequirements] = useState({
         permit: true,
@@ -70,8 +72,9 @@ const SchedulePage: React.FC = () => {
                             <div className="text-sm text-gray-400">
                                 Logic Check: {canAdvance ? <span className="text-green-400 font-bold">PASS</span> : <span className="text-red-400 font-bold">BLOCKED</span>}
                             </div>
-                            <Button disabled={!canAdvance} className={!canAdvance ? 'opacity-50 cursor-not-allowed' : ''}>
-                                Advance to Pre-Installation (Stage 5)
+                            <Button disabled={!canAdvance} className={cn("flex items-center gap-2", !canAdvance ? 'opacity-50 cursor-not-allowed' : '')}>
+                                <span>Advance to Pre-Installation (Stage 5)</span>
+                                <ChevronRightIcon className="w-5 h-5" />
                             </Button>
                         </div>
                     </Card>

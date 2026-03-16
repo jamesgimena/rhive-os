@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import type { Place, BuildingData, SurveyState, CalculationResult, RoofUpgrade, FlatRoofingType, GutterStyle, GutterSize, EaveOverhang, FlatRoofingColor } from '../types';
 import { usePricing } from '../contexts/PricingContext';
 import { calculateEstimate } from '../lib/calculations';
-import { RhiveLogo, SnowflakeIcon, Square, Calendar, RulerIcon, Check, ShareIcon } from './icons';
+import { RhiveLogo, SnowflakeIcon, Squares2x2Icon, Calendar, RulerIcon, Check, ShareIcon } from './icons';
 import { Button } from './ui/button';
 import { CircuitryBackground } from './CircuitryBackground';
 import { WeatherReport } from './WeatherReport';
@@ -118,7 +118,7 @@ const QuoteSummary: React.FC<{
     <div className="space-y-4 text-sm">
         <div className="p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
             <div className="flex items-center text-gray-300 mb-2">
-                <Square className="h-4 w-4 mr-2 text-pink-400"/>
+                <Squares2x2Icon className="h-4 w-4 mr-2 text-pink-400"/>
                 <h3 className="font-semibold">Total Roof Squares</h3>
             </div>
             <Input 

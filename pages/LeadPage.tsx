@@ -11,7 +11,8 @@ import {
     MapPinIcon, 
     ArrowLeftIcon,
     DocumentTextIcon,
-    CalculatorIcon
+    CalculatorIcon,
+    CheckCircleIcon
 } from '../components/icons';
 import { projectService } from '../lib/firebaseService';
 import { cn, getStagePageId } from '../lib/utils';
@@ -117,7 +118,10 @@ const LeadPage: React.FC = () => {
                 ) : !currentProject ? (
                     <div className="text-center p-20 bg-gray-900 border border-gray-800 rounded-xl">
                         <p className="text-gray-400">Project data could not be found or loaded.</p>
-                        <Button className="mt-4" onClick={handleClearProject}>Return</Button>
+                        <Button className="mt-4" onClick={handleClearProject}>
+                            <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                            Return
+                        </Button>
                     </div>
                 ) : (
                     <div className="space-y-6 max-w-5xl mx-auto">

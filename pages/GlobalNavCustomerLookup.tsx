@@ -298,7 +298,7 @@ const GlobalNavCustomerLookup: React.FC = () => {
                                             className="flex items-center p-5 hover:bg-rhive-pink/5 transition-all cursor-pointer group relative overflow-hidden"
                                         >
                                             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-rhive-pink scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
-                                            <div className="h-12 w-12 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-rhive-pink mr-5 shrink-0 group-hover:border-rhive-pink/50 group-hover:shadow-pink-glow-sm transition-all">
+                                            <div className="h-12 w-12 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-rhive-pink mr-5 shrink-0 group-hover:border-rhive-pink/50 group-hover:shadow-pink-glow-sm transition-all">
                                                 {(contact.role || '').toLowerCase().includes('contractor') || (contact.role || '').toLowerCase().includes('supplier')
                                                     ? <BuildingStorefrontIcon className="h-6 w-6" />
                                                     : <UserIcon className="h-6 w-6" />
@@ -364,7 +364,7 @@ const GlobalNavCustomerLookup: React.FC = () => {
                                             className="flex items-center p-5 hover:bg-rhive-pink/5 transition-all cursor-pointer group relative overflow-hidden"
                                         >
                                             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-rhive-pink scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
-                                            <div className="h-12 w-12 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-rhive-pink mr-5 shrink-0 group-hover:border-rhive-pink/50 group-hover:shadow-pink-glow-sm transition-all">
+                                            <div className="h-12 w-12 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-rhive-pink mr-5 shrink-0 group-hover:border-rhive-pink/50 group-hover:shadow-pink-glow-sm transition-all">
                                                 <BriefcaseIcon className="h-6 w-6" />
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -374,7 +374,7 @@ const GlobalNavCustomerLookup: React.FC = () => {
                                                 <div className="flex items-center gap-3 text-xs text-gray-500 font-medium">
                                                     {proj.current_stage && (
                                                         <span className={cn(
-                                                            "uppercase tracking-widest px-2 py-0.5 rounded border text-[10px] font-black",
+                                                            "uppercase tracking-widest px-2 py-0.5 rounded-full border text-[10px] font-black",
                                                             stageBadgeColor(proj.current_stage)
                                                         )}>
                                                             {proj.current_stage}
@@ -438,7 +438,7 @@ const GlobalNavCustomerLookup: React.FC = () => {
                                             onClick={() => handlePropertyClick(prop)}
                                         >
                                             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-rhive-pink scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
-                                            <div className="h-12 w-12 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-rhive-pink mr-5 shrink-0 group-hover:border-rhive-pink/50 group-hover:shadow-pink-glow-sm transition-all">
+                                            <div className="h-12 w-12 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-rhive-pink mr-5 shrink-0 group-hover:border-rhive-pink/50 group-hover:shadow-pink-glow-sm transition-all">
                                                 <MapPinIcon className="h-6 w-6" />
                                             </div>
                                             <div className="flex-1 min-w-0">

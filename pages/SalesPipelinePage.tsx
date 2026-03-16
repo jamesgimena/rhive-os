@@ -10,7 +10,8 @@ import {
     DocumentTextIcon, 
     PencilSquareIcon,
     BriefcaseIcon,
-    MapPinIcon
+    MapPinIcon,
+    ClockIcon
 } from '../components/icons';
 import { projectService } from '../lib/firebaseService';
 import { cn } from '../lib/utils';
@@ -79,7 +80,7 @@ const SalesPipelinePage: React.FC = () => {
                     )}
                     <p className="text-xs text-gray-600 font-mono mt-1">{project.id.slice(-12)} • {project.updated_at ? new Date(project.updated_at).toLocaleDateString() : ''}</p>
                 </div>
-                <div className="text-gray-300 bg-black/40 border border-gray-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider shrink-0">
+                <div className="text-gray-300 bg-black/40 border border-gray-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shrink-0">
                     {project.project_type || 'N/A'}
                 </div>
             </div>
@@ -130,7 +131,8 @@ const SalesPipelinePage: React.FC = () => {
                     </Button>
                 )}
                 {activeTab === 'Sign & Verify' && (
-                    <Button size="sm" variant="secondary" className="w-full cursor-default border-gray-700 text-gray-500 hover:bg-transparent hover:text-gray-500">
+                    <Button size="sm" variant="secondary" className="w-full cursor-default border-gray-700 text-gray-500 hover:bg-transparent hover:text-gray-500 flex items-center justify-center gap-2">
+                        <ClockIcon className="w-4 h-4" />
                         Awaiting Signature...
                     </Button>
                 )}
@@ -150,11 +152,12 @@ const SalesPipelinePage: React.FC = () => {
                         <button
                             key={stage}
                             onClick={() => setActiveTab(stage)}
-                            className={`px-6 py-3 rounded-t-lg text-sm font-bold transition-all duration-200 border-b-2 ${
+                            className={cn(
+                                "px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 border",
                                 activeTab === stage 
-                                    ? 'bg-gray-900/80 text-[#ec028b] border-[#ec028b]' 
-                                    : 'text-gray-500 border-transparent hover:text-white hover:bg-gray-900/30'
-                            }`}
+                                    ? 'bg-[#ec028b]/20 text-[#ec028b] border-[#ec028b]/50 shadow-[0_0_15px_rgba(236,2,139,0.2)]' 
+                                    : 'text-gray-500 border-gray-800 hover:text-white hover:bg-gray-800'
+                            )}
                         >
                             {stage}{' '}
                             <span className={`ml-3 text-xs px-2 py-0.5 rounded-full ${activeTab === stage ? 'bg-[#ec028b] text-white' : 'bg-gray-800 text-gray-400'}`}>

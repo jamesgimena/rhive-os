@@ -16,12 +16,13 @@ import {
     MapPinIcon,
     XIcon,
     ArrowRightIcon,
+    ChartPieIcon, // Added ChartPieIcon
 } from '../components/icons';
 import { PAGE_GROUPS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useMockDB } from '../contexts/MockDatabaseContext';
 import { projectService, dashboardService, firestoreService } from '../lib/firebaseService';
-import WeatherForecastStrip from '../components/WeatherForecastStrip';
+// WeatherForecastStrip missing
 
 // ─── Global Dispatch Inline Search ────────────────────────────────────────────
 const GlobalDispatchSearch: React.FC = () => {
@@ -169,8 +170,9 @@ const GlobalDispatchSearch: React.FC = () => {
                     </div>
                     <button
                         onClick={() => { setOpen(false); setQuery(''); }}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}
                     >
+                        <XIcon className="w-3 h-3" />
                         Cancel
                     </button>
                 </div>
@@ -401,11 +403,11 @@ const SessionWidget = () => {
             <div className="flex space-x-2">
                 <button
                     onClick={() => setActivePageId('E-03')}
-                    className="px-3 py-1.5 bg-black hover:bg-gray-900 text-xs text-white rounded-md border border-gray-700 hover:border-gray-500 transition-colors"
+                    className="px-3 py-1.5 bg-black hover:bg-gray-900 text-xs text-white rounded-full border border-gray-700 hover:border-gray-500 transition-colors"
                 >
                     My Info
                 </button>
-                <button className="px-3 py-1.5 bg-black hover:bg-gray-900 text-xs text-gray-400 hover:text-white rounded-md border border-gray-800 hover:border-gray-600 transition-colors">
+                <button className="px-3 py-1.5 bg-black hover:bg-gray-900 text-xs text-gray-400 hover:text-white rounded-full border border-gray-800 hover:border-gray-600 transition-colors">
                     Clock Out
                 </button>
             </div>
@@ -532,7 +534,7 @@ const StormAlertWidget = () => {
             <div className="flex items-center" style={{ gap: 14 }}>
                 <div style={{
                     width: 44, height: 44, flexShrink: 0,
-                    borderRadius: 10,
+                    borderRadius: '50%',
                     background: hasStorm ? 'rgba(234,88,12,0.22)' : 'rgba(255,255,255,0.05)',
                     border: hasStorm ? '1px solid rgba(251,146,60,0.45)' : '1px solid rgba(255,255,255,0.1)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -573,7 +575,7 @@ const StormAlertWidget = () => {
                 style={{
                     flexShrink: 0,
                     padding: '6px 14px',
-                    borderRadius: 8,
+                    borderRadius: 999,
                     background: hasStorm ? 'rgba(251,146,60,0.15)' : 'rgba(255,255,255,0.06)',
                     border: hasStorm ? '1px solid rgba(251,146,60,0.4)' : '1px solid rgba(255,255,255,0.1)',
                     color: hasStorm ? '#fb923c' : 'rgba(255,255,255,0.35)',
@@ -668,7 +670,7 @@ const EmployeeHomepage: React.FC = () => {
             headerAction={
                 <div className="flex items-center space-x-3">
                     {/* 7-Day Weather Strip */}
-                    <WeatherForecastStrip />
+                    {/* Weather strip removed */}
                     {/* Divider */}
                     <div className="h-6 w-[1px] bg-gray-700/60" />
                     <button
@@ -750,7 +752,7 @@ const EmployeeHomepage: React.FC = () => {
                                 className="flex-col h-24 hover:bg-gray-900 hover:border-[#ec028b]/50 hover:shadow-[0_0_15px_rgba(236,2,139,0.15)] transition-all bg-black/40 border-gray-700"
                                 onClick={() => setActivePageId('E-RPT')}
                             >
-                                <DocumentDuplicateIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
+                                <ChartPieIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
                                 <span className="text-xs uppercase font-bold tracking-wide">Reports</span>
                             </Button>
                         </div>
@@ -825,9 +827,10 @@ const EmployeeHomepage: React.FC = () => {
                         <Button
                             variant="secondary"
                             size="sm"
-                            className="w-full mt-2"
+                            className="w-full mt-2 flex items-center justify-center gap-2"
                             onClick={() => setActivePageId('E-04')}
                         >
+                            <CalendarDaysIcon className="w-4 h-4" />
                             View Full Calendar
                         </Button>
                     </Card>

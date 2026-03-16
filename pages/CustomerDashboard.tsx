@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import { useMockDB } from '../contexts/MockDatabaseContext';
-import { DocumentCheckIcon, PencilSquareIcon, BriefcaseIcon } from '../components/icons';
+import { DocumentCheckIcon, PencilSquareIcon, BriefcaseIcon, CheckCircleIcon } from '../components/icons';
 import { projectService, firestoreService } from '../lib/firebaseService';
 import { cn } from '../lib/utils';
 
@@ -101,9 +101,15 @@ const CustomerDashboard: React.FC = () => {
                                                 Total: ${activeQuoteProject.quote.total?.toLocaleString()}
                                             </span>
                                             {activeQuoteProject.quote.status === 'Approved' ? (
-                                                <span className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg border border-green-500/50 font-bold">Approved ✓</span>
+                                                <span className="px-4 py-2 bg-green-500/20 text-green-400 rounded-full border border-green-500/50 font-bold flex items-center gap-2">
+                                                    <CheckCircleIcon className="w-5 h-5" />
+                                                    Approved
+                                                </span>
                                             ) : (
-                                                <Button size="lg">Approve & Schedule</Button>
+                                                <Button size="lg" className="flex items-center gap-2">
+                                                    <CheckCircleIcon className="w-5 h-5" />
+                                                    Approve & Schedule
+                                                </Button>
                                             )}
                                         </div>
                                     </div>
@@ -158,7 +164,7 @@ const CustomerDashboard: React.FC = () => {
                                     <p className="text-gray-400 text-xs font-mono mb-2">{getAddress(p)}</p>
                                     <div className="flex items-center justify-between">
                                         <span className={cn(
-                                            'text-[10px] px-2 py-1 rounded border font-black uppercase tracking-wider',
+                                            'text-[10px] px-2 py-1 rounded-full border font-black uppercase tracking-wider',
                                             stageBadgeColor(p.current_stage)
                                         )}>
                                             {p.current_stage || 'Lead'}

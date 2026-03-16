@@ -21,7 +21,8 @@ import {
     limit,
     DocumentData,
     Timestamp,
-    onSnapshot
+    onSnapshot,
+    writeBatch
 } from 'firebase/firestore';
 import {
     ref,
@@ -122,6 +123,26 @@ export const firestoreService = {
             console.error(`Error deleting ${collectionName} ${id}:`, error);
             return { success: false, error: error.message };
         }
+    },
+
+    createBatch: async (collectionName: string, dataArray: any[]) => {
+        try {
+            const batch = writeBatch(db);
+            const colRef = collection(db, collectionName);
+            dataArray.forEach(data => {
+                const newDocRef = doc(colRef);
+                batch.set(newDocRef, {
+                    ...data,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                });
+            });
+            await batch.commit();
+            return { success: true, count: dataArray.length };
+        } catch (error: any) {
+            console.error(`Error in batch create for ${collectionName}:`, error);
+            return { success: false, error: error.message };
+        }
     }
 };
 
@@ -148,11 +169,11 @@ const mapProjectToSnakeCase = (input: ProjectInput) => ({
 });
 
 export const projectService = {
-    getAll: () => firestoreService.getAllDocuments('project'),
-    subscribe: (callback: (data: any[]) => void) => firestoreService.subscribeToDocuments('project', callback),
+    getAll: () => firestoreService.getAllDocuments('projects'),
+    subscribe: (callback: (data: any[]) => void) => firestoreService.subscribeToDocuments('projects', callback),
     subscribeToRecentActivity: (callback: (data: any[]) => void, limitCount = 5) => {
         const q = query(
-            collection(db, 'project'),
+            collection(db, 'projects'),
             orderBy('created_at', 'desc'),
             limit(limitCount)
         );
@@ -160,11 +181,16 @@ export const projectService = {
             callback(snapshot.docs.map(mapDoc));
         });
     },
-    getById: (id: string) => firestoreService.getDocument('project', id),
+    getById: (id: string) => firestoreService.getDocument('projects', id),
+    createBatch: (dataArray: any[]) => firestoreService.createBatch('projects', dataArray),
 
-    // Creates Project and related sub-collections automatically
+    // Creates Project/Lead and related sub-collections automatically
     createFullProject: async (input: ProjectInput) => {
         try {
+            // Determine if it's a lead or project based on current_stage or initial state
+            // For now, if stage is 'Lead', it goes to 'leads' collection
+            const targetCollection = 'leads'; // New projects start as leads usually
+
             // 1. Create the Property entry first
             const propertyData = {
                 address_full: `${input.property.address}, ${input.property.city}, ${input.property.state} ${input.property.zip}`,
@@ -182,21 +208,36 @@ export const projectService = {
             if (!propertyResult.success) throw new Error(propertyResult.error);
             const propertyId = propertyResult.id;
 
-            // 2. Create the Project and link to property
-            // Remove undefined values which Firestore doesn't support
-            const projectData = JSON.parse(JSON.stringify(mapProjectToSnakeCase(input)));
-            projectData.property_id = propertyId; // LINK to the new property node
+            // 2. Create the Account (Company) entry if organization info exists
+            let accountId = null;
+            if (input.organization?.parentCompany) {
+                const accountData = {
+                    name: input.organization.parentCompany,
+                    propertyName: input.organization.propertyName,
+                    type: 'Company',
+                    created_at: new Date().toISOString()
+                };
+                const accountResult = await firestoreService.addDocument('accounts', accountData);
+                if (accountResult.success) {
+                    accountId = accountResult.id;
+                }
+            }
 
-            const projectResult = await firestoreService.addDocument('project', projectData);
+            // 3. Create the Lead/Project and link
+            const projectData = JSON.parse(JSON.stringify(mapProjectToSnakeCase(input)));
+            projectData.property_id = propertyId;
+            if (accountId) projectData.account_id = accountId;
+
+            const projectResult = await firestoreService.addDocument(targetCollection, projectData);
             if (!projectResult.success) throw new Error(projectResult.error);
             const projectId = projectResult.id;
 
             if (input.contacts && input.contacts.length > 0) {
                 const contactPromises = input.contacts.map(contact =>
-                    // AUTO-CREATES 'contacts' collection if missing
                     firestoreService.addDocument('contacts', {
                         project_id: projectId,
-                        property_id: propertyId, // Also link contact to property
+                        property_id: propertyId,
+                        account_id: accountId,
                         first_name: contact.firstName,
                         last_name: contact.lastName,
                         email: contact.email,
@@ -208,16 +249,17 @@ export const projectService = {
                 await Promise.all(contactPromises);
             }
 
-            return { success: true, projectId, propertyId };
+            return { success: true, projectId, propertyId, accountId };
         } catch (error: any) {
             console.error('Error creating full project:', error);
             return { success: false, error: error.message };
         }
     },
 
-    getFullProject: async (id: string) => {
+    getFullProject: async (id: string, isLead = false) => {
         try {
-            const projectRes = await firestoreService.getDocument('project', id);
+            const collectionName = isLead ? 'leads' : 'projects';
+            const projectRes = await firestoreService.getDocument(collectionName, id);
             if (!projectRes.success) throw new Error(projectRes.error);
             const project = projectRes.data;
 
@@ -242,6 +284,24 @@ export const projectService = {
             return { success: false, error: error.message };
         }
     }
+};
+
+export const leadService = {
+    getAll: () => firestoreService.getAllDocuments('leads'),
+    subscribe: (callback: (data: any[]) => void) => firestoreService.subscribeToDocuments('leads', callback),
+    getById: (id: string) => firestoreService.getDocument('leads', id),
+    update: (id: string, data: any) => firestoreService.updateDocument('leads', id, data),
+    delete: (id: string) => firestoreService.deleteDocument('leads', id)
+};
+
+export const accountService = {
+    getAll: () => firestoreService.getAllDocuments('accounts'),
+    subscribe: (callback: (data: any[]) => void) => firestoreService.subscribeToDocuments('accounts', callback),
+    getById: (id: string) => firestoreService.getDocument('accounts', id),
+    create: (data: any) => firestoreService.addDocument('accounts', data),
+    update: (id: string, data: any) => firestoreService.updateDocument('accounts', id, data),
+    delete: (id: string) => firestoreService.deleteDocument('accounts', id),
+    createBatch: (dataArray: any[]) => firestoreService.createBatch('accounts', dataArray)
 };
 
 export const contactService = {
@@ -286,15 +346,16 @@ export const userService = {
 export const dashboardService = {
     getStats: async () => {
         try {
-            const [projects, contacts, estimates] = await Promise.all([
-                getDocs(collection(db, 'project')),
+            const [projects, leads, contacts, estimates] = await Promise.all([
+                getDocs(collection(db, 'projects')),
+                getDocs(collection(db, 'leads')),
                 getDocs(collection(db, 'contacts')),
                 getDocs(collection(db, 'estimates'))
             ]);
             return {
                 success: true,
                 data: {
-                    total_projects: projects.size,
+                    total_projects: projects.size + leads.size,
                     total_contacts: contacts.size,
                     total_estimates: estimates.size,
                     total_revenue: 0
@@ -338,7 +399,7 @@ export const dashboardService = {
 
         // Active projects (non-completed)
         const unsubProjects = onSnapshot(
-            query(collection(db, 'project'), orderBy('created_at', 'desc')),
+            query(collection(db, 'projects'), orderBy('created_at', 'desc')),
             (snap) => {
                 projectCount = snap.docs.filter(d => {
                     const s = d.data().status;
@@ -348,6 +409,16 @@ export const dashboardService = {
                     const created = d.data().created_at;
                     return created && new Date(created) >= oneWeekAgo;
                 }).length;
+                notify();
+            }
+        );
+
+        // Also track leads
+        const unsubLeads = onSnapshot(
+            collection(db, 'leads'),
+            (snap) => {
+                // You might want to combine these into projectCount or separate
+                // For now, let's keep it simple
                 notify();
             }
         );
@@ -397,15 +468,15 @@ export const dashboardService = {
     },
     getRecentActivity: async (limitCount = 10) => {
         try {
-            const q = query(collection(db, 'project'), orderBy('created_at', 'desc'), limit(limitCount));
+            const q = query(collection(db, 'projects'), orderBy('created_at', 'desc'), limit(limitCount));
             const snap = await getDocs(q);
-            const activities = snap.docs.map(d => ({
+            const activitiesCount = snap.docs.map(d => ({
                 id: d.id,
                 type: 'project_created',
                 description: `Project ${d.data().name || 'Unknown'} created`,
                 created_at: d.data().created_at
             }));
-            return { success: true, data: activities };
+            return { success: true, data: activitiesCount };
         } catch (error: any) {
             return { success: false, error: error.message };
         }
@@ -416,7 +487,7 @@ export const searchService = {
     searchProjects: async (term: string) => {
         try {
             const q = query(
-                collection(db, 'project'),
+                collection(db, 'projects'),
                 where('name', '>=', term),
                 where('name', '<=', term + '\uf8ff')
             );
