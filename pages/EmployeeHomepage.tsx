@@ -22,12 +22,8 @@ import { PAGE_GROUPS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useMockDB } from '../contexts/MockDatabaseContext';
 import { projectService, dashboardService, firestoreService } from '../lib/firebaseService';
-<<<<<<< HEAD
 import WeatherForecastStrip from '../components/WeatherForecastStrip';
 import { getStagePageId } from '../lib/utils';
-=======
-// WeatherForecastStrip missing
->>>>>>> 4a4a5a98ca7ce94d8e7826863f12022af3f14b71
 
 // ─── Global Dispatch Inline Search ────────────────────────────────────────────
 const GlobalDispatchSearch: React.FC = () => {

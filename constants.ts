@@ -65,19 +65,6 @@ export const PAGE_GROUPS: PageGroup[] = [
         label: 'PIPELINE STAGES',
         pages: [
             { id: 'E-05', name: 'Pipeline Overview', userType: 'Employee' },
-<<<<<<< HEAD
-            { id: 'E-26', name: '1. Lead Stage', userType: 'Employee', category: 'Stages' },
-            { id: 'E-27', name: '2. Estimate Stage', userType: 'Employee', category: 'Stages' },
-            { id: 'E-28', name: '3. Quote Stage', userType: 'Employee', category: 'Stages' },
-            { id: 'E-29', name: '4. Sign & Verify', userType: 'Employee', category: 'Stages' },
-            { id: 'E-30', name: '5. Schedule Stage', userType: 'Employee', category: 'Stages' },
-            { id: 'E-31', name: '6. Pre-Installation', userType: 'Employee', category: 'Stages' },
-            { id: 'E-32', name: '7. Install Stage', userType: 'Employee', category: 'Stages' },
-            { id: 'E-33', name: '8. Punch List', userType: 'Employee', category: 'Stages' },
-            { id: 'E-34', name: '9. Invoicing Stage', userType: 'Employee', category: 'Stages' },
-            { id: 'E-36', name: '10. Completed', userType: 'Employee', category: 'Stages' },
-            { id: 'E-37', name: 'Past Customer', userType: 'Employee', category: 'Stages' },
-=======
             { id: 'E-26', name: 'Stage 1: LEAD (Intake)', userType: 'Employee', category: 'Stages' },
             { id: 'E-27', name: 'Stage 2: ESTIMATE (Property Data)', userType: 'Employee', category: 'Stages' },
             { id: 'E-28', name: 'Stage 3: QUOTE (Pricing Options)', userType: 'Employee', category: 'Stages' },
@@ -89,7 +76,6 @@ export const PAGE_GROUPS: PageGroup[] = [
             { id: 'E-34', name: 'Stage 9: INVOICING (Balance Due)', userType: 'Employee', category: 'Stages' },
             { id: 'E-36', name: 'Stage 10: COMPLETED (Paid)', userType: 'Employee', category: 'Stages' },
             { id: 'E-37', name: 'Stage 11: PAST CUSTOMER (Referral System)', userType: 'Employee', category: 'Stages' },
->>>>>>> 4a4a5a98ca7ce94d8e7826863f12022af3f14b71
         ]
     },
     {
