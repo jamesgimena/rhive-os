@@ -22,11 +22,12 @@ import { PAGE_GROUPS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useMockDB } from '../contexts/MockDatabaseContext';
 import { projectService, dashboardService, firestoreService } from '../lib/firebaseService';
-// WeatherForecastStrip missing
+import WeatherForecastStrip from '../components/WeatherForecastStrip';
+import { getStagePageId } from '../lib/utils';
 
 // ─── Global Dispatch Inline Search ────────────────────────────────────────────
 const GlobalDispatchSearch: React.FC = () => {
-    const { setActivePageId } = useNavigation();
+    const { setActivePageId, setSelectedContactId, setSelectedProjectId, setSelectedPropertyId } = useNavigation();
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [contacts, setContacts] = useState<any[]>([]);
@@ -100,6 +101,27 @@ const GlobalDispatchSearch: React.FC = () => {
         setOpen(false);
         setQuery('');
         setActivePageId(pageId);
+    };
+
+    const goContact = (id: string) => {
+        setOpen(false);
+        setQuery('');
+        setSelectedContactId(id);
+        setActivePageId('E-10');
+    };
+
+    const goProject = (id: string, stage?: string) => {
+        setOpen(false);
+        setQuery('');
+        setSelectedProjectId(id);
+        setActivePageId(getStagePageId(stage));
+    };
+
+    const goProperty = (id: string) => {
+        setOpen(false);
+        setQuery('');
+        setSelectedPropertyId(id);
+        setActivePageId('E-12');
     };
 
     const stageBadge = (stage?: string) => {
@@ -227,7 +249,7 @@ const GlobalDispatchSearch: React.FC = () => {
                                     return (
                                         <div
                                             key={c.id}
-                                            onClick={() => go('E-24')}
+                                            onClick={() => goContact(c.id)}
                                             style={{
                                                 display: 'flex', alignItems: 'center', gap: 12,
                                                 padding: '10px 16px',
@@ -267,7 +289,7 @@ const GlobalDispatchSearch: React.FC = () => {
                                 {filteredProjects.slice(0, 5).map((p: any) => (
                                     <div
                                         key={p.id}
-                                        onClick={() => go('E-05')}
+                                        onClick={() => goProject(p.id, p.current_stage)}
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: 12,
                                             padding: '10px 16px',
@@ -317,7 +339,7 @@ const GlobalDispatchSearch: React.FC = () => {
                                     return (
                                         <div
                                             key={p.id}
-                                            onClick={() => go('E-12')}
+                                            onClick={() => goProperty(p.id)}
                                             style={{
                                                 display: 'flex', alignItems: 'center', gap: 12,
                                                 padding: '10px 16px',

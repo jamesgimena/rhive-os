@@ -24,7 +24,12 @@ const stageBadgeColor = (stage?: string) => {
 };
 
 const PropertyPage: React.FC = () => {
-    const { selectedPropertyId } = useNavigation();
+    const { selectedPropertyId, setActivePageId, setSelectedContactId } = useNavigation();
+
+    const handleContactClick = (contactId: string) => {
+        setSelectedContactId(contactId);
+        setActivePageId('E-10'); // Redirect to Contact Vendor Profile Page
+    };
 
     const [property, setProperty] = useState<any>(null);
     const [contacts, setContacts] = useState<any[]>([]);
@@ -76,9 +81,13 @@ const PropertyPage: React.FC = () => {
         return () => unsubProjects();
     }, [property]);
 
-    const satUrl = property?.latitude && property?.longitude
-        ? `https://maps.googleapis.com/maps/api/staticmap?center=${property.latitude},${property.longitude}&zoom=20&size=800x400&maptype=satellite&key=${MAPS_API_KEY}`
-        : null;
+    const addressForMap = property?.address_full || property?.property_address;
+    
+    const satUrl = (property?.latitude && property?.longitude)
+        ? `https://maps.googleapis.com/maps/api/staticmap?center=${property.latitude},${property.longitude}&zoom=18&size=800x400&maptype=satellite&markers=color:red%7C${property.latitude},${property.longitude}&key=${MAPS_API_KEY}`
+        : addressForMap
+            ? `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(addressForMap)}&zoom=18&size=800x400&maptype=satellite&markers=color:red%7C${encodeURIComponent(addressForMap)}&key=${MAPS_API_KEY}`
+            : null;
 
     if (loading) {
         return (
@@ -121,11 +130,26 @@ const PropertyPage: React.FC = () => {
                     <Card title="Location">
                         <div className="relative h-80 bg-gray-900 rounded-lg overflow-hidden">
                             {satUrl ? (
-                                <img
-                                    src={satUrl}
-                                    className="w-full h-full object-cover"
-                                    alt="Satellite view"
-                                />
+                                <div className="w-full h-full">
+                                    <iframe
+                                        width="100%"
+                                        height="100%"
+                                        style={{ border: 0 }}
+                                        loading="lazy"
+                                        allowFullScreen
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        src={`https://www.google.com/maps/embed/v1/view?key=${MAPS_API_KEY}&center=${property?.latitude || 33.3286},${property?.longitude || -115.8434}&zoom=15&maptype=satellite`}
+                                    ></iframe>
+                                    {/* Floating Address Label over Pin (Since we use view, we center the label) */}
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[20px] pointer-events-none z-10">
+                                        <div className="bg-black/90 backdrop-blur-lg border border-[#ec028b] px-3 py-1.5 rounded shadow-[0_0_20px_rgba(236,2,139,0.4)] flex flex-col items-center animate-in fade-in zoom-in duration-500">
+                                            <p className="text-white font-black text-[10px] whitespace-nowrap uppercase tracking-tighter">
+                                                {addressTitle}
+                                            </p>
+                                            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#ec028b]"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                     <MapPinIcon className="w-16 h-16 text-gray-700" />
@@ -187,8 +211,12 @@ const PropertyPage: React.FC = () => {
                         ) : (
                             <ul className="space-y-3">
                                 {contacts.map((c: any) => (
-                                    <li key={c.id} className="flex items-center gap-3 p-3 bg-gray-900/40 border border-gray-800/50 rounded-lg">
-                                        <div className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 flex items-center justify-center text-[#ec028b] font-black text-sm shrink-0">
+                                    <li 
+                                        key={c.id} 
+                                        onClick={() => handleContactClick(c.id)}
+                                        className="flex items-center gap-3 p-3 bg-gray-900/40 border border-gray-800/50 rounded-lg cursor-pointer hover:border-[#ec028b]/50 hover:bg-gray-900/60 transition-all group"
+                                    >
+                                        <div className="w-9 h-9 rounded-lg bg-gray-900 border border-gray-800 flex items-center justify-center text-[#ec028b] font-black text-sm shrink-0 group-hover:border-[#ec028b]/50 transition-all">
                                             {(c.first_name || c.name || '?')[0]?.toUpperCase()}
                                         </div>
                                         <div>
