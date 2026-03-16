@@ -154,7 +154,7 @@ export interface Pricing {
 }
 
 // Types for App Structure
-export type UserType = 'Employee' | 'Customer' | 'Contractor' | 'Supplier' | 'Public';
+export type UserType = 'Admin' | 'Employee' | 'Customer' | 'Contractor' | 'Supplier' | 'Public' | 'Super Admin';
 
 export interface User {
     id: string;
@@ -163,6 +163,7 @@ export interface User {
     email?: string;
     phone?: string;
     avatarUrl?: string;
+    password_hash?: string;
 }
 
 export interface Project {

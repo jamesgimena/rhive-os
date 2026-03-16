@@ -11,6 +11,7 @@ const createIcon = (path: string): React.FC<React.SVGProps<SVGSVGElement>> => (p
 );
 
 export const DefaultIcon = createIcon("M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z");
+export const CommandLineIcon = createIcon("M4 17l6-6-6-6 M12 19h8");
 export const I = DefaultIcon;
 
 // Core Icons with distinct paths

@@ -41,6 +41,9 @@ import ContractorFinancialsPage from './pages/ContractorFinancialsPage'; // CO-0
 import NewProjectBidsPage from './pages/NewProjectBidsPage'; // CO-05
 import SupplierHomepage from './pages/SupplierHomepage'; // S-01
 import SupplierProfilePage from './pages/SupplierProfilePage'; // S-04
+import UserManagementPage from './pages/UserManagementPage'; // A-02
+import AdminDashboardPage from './pages/AdminDashboardPage'; // A-01
+import RoleManagementPage from './pages/RoleManagementPage'; // SA-01
 import CustomerTrackerPage from './pages/CustomerTrackerPage'; // C-Tracker
 import SimulationGuidePage from './pages/SimulationGuidePage'; // (Simulation)
 
@@ -79,8 +82,8 @@ export const pageComponentMap: Record<string, React.FC> = {
   'P-12': EstimateToolPage,
 
   // Admin (Employee World Section 1)
-  'A-01': () => <Placeholder name="Admin Admin Dashboard" />,
-  'A-02': () => <Placeholder name="Admin User Management" />,
+  'A-01': AdminDashboardPage,
+  'A-02': UserManagementPage,
   'A-03': EstimatePricingPage,
   'A-04': EstimateBackendApiPage,
   'A-05': LineItemCatalogPage,
@@ -152,4 +155,6 @@ export const pageComponentMap: Record<string, React.FC> = {
 
   // Simulation
   'E-SIM-GUIDE': SimulationGuidePage,
+  'SA-01': RoleManagementPage,
+  'SA-02': () => <Placeholder name="Global Settings" />,
 };

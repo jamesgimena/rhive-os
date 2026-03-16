@@ -93,16 +93,37 @@ const SEED_PROJECTS: Project[] = [
     }
 ];
 
+import { userService } from '../lib/firebaseService';
+
 export const MockDatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [users, setUsers] = useState<User[]>(SEED_USERS);
+    const [users, setUsers] = useState<User[]>([]);
     const [properties, setProperties] = useState<Property[]>(SEED_PROPERTIES);
     const [projects, setProjects] = useState<Project[]>(SEED_PROJECTS);
+    const [loading, setLoading] = useState(true);
 
     const [currentUser, setCurrentUser] = useState<User | null>(() => {
         const saved = localStorage.getItem('rhive_user');
         return saved ? JSON.parse(saved) : null;
     });
     const [currentProjectId, setCurrentProjectId] = useState<string | null>(localStorage.getItem('rhive_project_id'));
+
+    useEffect(() => {
+        const unsub = userService.subscribe((data) => {
+            setUsers(data as User[]);
+            setLoading(false);
+            
+            // Sync current user if role/data changed in DB
+            const saved = localStorage.getItem('rhive_user');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                const updated = (data as User[]).find(u => u.id === parsed.id);
+                if (updated && JSON.stringify(updated) !== saved) {
+                    setCurrentUser(updated);
+                }
+            }
+        });
+        return () => unsub();
+    }, []);
 
     useEffect(() => {
         if (currentUser) localStorage.setItem('rhive_user', JSON.stringify(currentUser));
@@ -114,9 +135,31 @@ export const MockDatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ 
         else localStorage.removeItem('rhive_project_id');
     }, [currentProjectId]);
 
-    const login = (role: string) => {
-        const user = users.find(u => u.role === role) || users[users.length - 1]; // Fallback to Guest
-        setCurrentUser(user);
+    const login = async (role: string, password?: string) => {
+        // Find users with this role
+        const candidates = users.filter(u => u.role === role);
+        if (candidates.length === 0) return { success: false, error: 'Role not found' };
+
+        // If user has a password_hash, we must validate it
+        if (password !== undefined) {
+          const { hashPassword } = await import('../lib/utils');
+          const hashed = await hashPassword(password);
+          
+          const validUser = candidates.find(u => u.password_hash === hashed);
+          if (validUser) {
+            setCurrentUser(validUser);
+            return { success: true };
+          }
+          return { success: false, error: 'Invalid security key' };
+        }
+
+        // Default to first user if no password required (like Public)
+        const user = candidates[0] || users.find(u => u.role === 'Public');
+        if (user) {
+          setCurrentUser(user);
+          return { success: true };
+        }
+        return { success: false, error: 'Login failed' };
     };
 
     const logout = () => {
@@ -127,15 +170,7 @@ export const MockDatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // --- ACTIONS ---
 
     const addUser = (user: Partial<User>) => {
-        const newUser: User = {
-            id: `U-${Date.now()}`,
-            name: user.name || 'Unknown',
-            role: user.role || 'Customer',
-            email: user.email || '',
-            phone: user.phone || '',
-            avatarUrl: user.avatarUrl
-        };
-        setUsers(prev => [...prev, newUser]);
+        userService.create(user);
     };
 
     const addProperty = (property: Partial<Property>) => {

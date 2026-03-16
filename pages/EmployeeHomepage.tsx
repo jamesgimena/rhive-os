@@ -16,7 +16,8 @@ import {
     MapPinIcon,
     XIcon,
     ArrowRightIcon,
-    ChartPieIcon, // Added ChartPieIcon
+    ChartPieIcon,
+    ShieldCheckIcon,
 } from '../components/icons';
 import { PAGE_GROUPS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -217,6 +218,7 @@ const GlobalDispatchSearch: React.FC = () => {
                     zIndex: 99999,
                     overflow: 'hidden',
                 }}>
+
                     {/* Header */}
                     <div style={{
                         padding: '12px 16px 10px',
@@ -618,6 +620,7 @@ const StormAlertWidget = () => {
 const EmployeeHomepage: React.FC = () => {
     const page = PAGE_GROUPS.flatMap(g => g.pages).find(p => p.id === 'E-01');
     const { setActivePageId } = useNavigation();
+    const { currentUser } = useMockDB();
 
     const [activity, setActivity] = useState<{ user: string; action: string; target: string; time: string }[]>([]);
     const [activityLoading, setActivityLoading] = useState(true);
@@ -748,7 +751,7 @@ const EmployeeHomepage: React.FC = () => {
                             <Button
                                 variant="secondary"
                                 className="flex-col h-24 hover:bg-gray-900 hover:border-[#ec028b]/50 hover:shadow-[0_0_15px_rgba(236,2,139,0.15)] transition-all bg-black/40 border-gray-700"
-                                onClick={() => setActivePageId('E-CUST-IN')}
+                                onClick={() => setActivePageId('E-02a')}
                             >
                                 <UserIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
                                 <span className="text-xs uppercase font-bold tracking-wide">New Intake</span>
@@ -756,23 +759,24 @@ const EmployeeHomepage: React.FC = () => {
                             <Button
                                 variant="secondary"
                                 className="flex-col h-24 hover:bg-gray-900 hover:border-[#ec028b]/50 hover:shadow-[0_0_15px_rgba(236,2,139,0.15)] transition-all bg-black/40 border-gray-700"
-                                onClick={() => setActivePageId('E-SALES')}
+                                onClick={() => setActivePageId('E-05')}
                             >
                                 <BriefcaseIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
-                                <span className="text-xs uppercase font-bold tracking-wide">Sales Hub</span>
+                                <span className="text-xs uppercase font-bold tracking-wide">Pipeline Overview</span>
                             </Button>
                             <Button
                                 variant="secondary"
                                 className="flex-col h-24 hover:bg-gray-900 hover:border-[#ec028b]/50 hover:shadow-[0_0_15px_rgba(236,2,139,0.15)] transition-all bg-black/40 border-gray-700"
-                                onClick={() => setActivePageId('E-PROD')}
+                                onClick={() => setActivePageId('E-06')}
                             >
                                 <CalendarDaysIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
-                                <span className="text-xs uppercase font-bold tracking-wide">Production</span>
+                                <span className="text-xs uppercase font-bold tracking-wide">Project Map</span>
                             </Button>
                             <Button
                                 variant="secondary"
                                 className="flex-col h-24 hover:bg-gray-900 hover:border-[#ec028b]/50 hover:shadow-[0_0_15px_rgba(236,2,139,0.15)] transition-all bg-black/40 border-gray-700"
-                                onClick={() => setActivePageId('E-RPT')}
+                                onClick={() => setActivePageId('E-18')}
+                                disabled={currentUser?.role !== 'Admin' && currentUser?.role !== 'Super Admin'}
                             >
                                 <ChartPieIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
                                 <span className="text-xs uppercase font-bold tracking-wide">Reports</span>
@@ -827,10 +831,25 @@ const EmployeeHomepage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- RIGHT COLUMN (Sidebar) --- */}
                 <div className="space-y-6">
                     {/* Session Widget */}
                     <SessionWidget />
+
+                    {/* Admin Insights (Only for Admin/Super Admin) */}
+                    {(currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin') && (
+                        <Card className="bg-[#ec028b]/10 border-[#ec028b]/30 group hover:border-[#ec028b]/60 transition-all cursor-pointer overflow-hidden p-6" onClick={() => setActivePageId('A-01')}>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <ShieldCheckIcon className="w-6 h-6 text-[#ec028b]" />
+                                    <h4 className="font-black text-white uppercase tracking-widest text-sm leading-none">Control Room</h4>
+                                </div>
+                                <ArrowRightIcon className="w-4 h-4 text-[#ec028b] group-hover:translate-x-1 transition-transform" />
+                            </div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider leading-relaxed">
+                                Access organization-wide oversight protocols and system status.
+                            </p>
+                        </Card>
+                    )}
 
                     {/* Agenda */}
                     <Card title="Today's Schedule">

@@ -373,6 +373,7 @@ export const estimateService = {
 
 export const userService = {
     getAll: () => firestoreService.getAllDocuments('users'),
+    subscribe: (callback: (data: any[]) => void) => firestoreService.subscribeToDocuments('users', callback),
     create: (data: any) => firestoreService.addDocument('users', data),
     update: (id: string, data: any) => firestoreService.updateDocument('users', id, data),
     delete: (id: string) => firestoreService.deleteDocument('users', id)

@@ -55,6 +55,10 @@ const getIconForPage = (id: string) => {
     if (id === 'A-04') return <BoltIcon className="h-5 w-5" />;
     if (id === 'A-05') return <ListBulletIcon className="h-5 w-5" />;
     if (id.startsWith('A-')) return <ShieldCheckIcon className="h-5 w-5" />;
+    
+    // SUPER ADMIN (SA-Series)
+    if (id === 'SA-01') return <ShieldCheckIcon className="h-5 w-5" />;
+    if (id === 'SA-02') return <BoltIcon className="h-5 w-5" />;
 
     // EMPLOYEE (E-Series)
     if (id === 'E-01') return <HomeIcon className="h-5 w-5" />;
@@ -121,10 +125,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ pageGroups }) => {
         setExpandedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
     };
 
-    // Filter groups based on user role
+    // Hierarchy mapping: Each role can see their own groups plus everything below them
+    const roleHierarchy: Record<string, string[]> = {
+        'Super Admin': ['Super Admin', 'Admin', 'Employee'],
+        'Admin': ['Admin', 'Employee'],
+        'Employee': ['Employee'],
+        'Customer': ['Customer'],
+        'Contractor': ['Contractor'],
+        'Supplier': ['Supplier'],
+        'Public': ['Public']
+    };
+
+    // Filter groups based on user role and hierarchy
     const sourceGroups = pageGroups || PAGE_GROUPS;
+    const allowedTypes = roleHierarchy[currentUser.role] || [currentUser.role];
     const userGroups = sourceGroups.filter(group => 
-        group.userType === 'All' || group.userType === currentUser.role
+        group.userType === 'All' || allowedTypes.includes(group.userType)
     );
 
     return (

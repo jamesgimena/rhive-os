@@ -56,8 +56,14 @@ export const PAGE_GROUPS: PageGroup[] = [
             { id: 'E-02a', name: 'Customer Input', userType: 'Employee' },
             { id: 'E-03', name: 'AI Assistant', userType: 'Employee' },
             { id: 'E-04', name: 'Calendar', userType: 'Employee' },
-            { id: 'E-16', name: 'Income Actionator', userType: 'Employee' },
-            { id: 'E-17', name: 'Commission Compass', userType: 'Employee' },
+        ]
+    },
+    {
+        userType: 'Admin',
+        label: 'FINANCIAL CONTROL',
+        pages: [
+            { id: 'E-16', name: 'Income Actionator', userType: 'Admin' },
+            { id: 'E-17', name: 'Commission Compass', userType: 'Admin' },
         ]
     },
     {
@@ -95,8 +101,6 @@ export const PAGE_GROUPS: PageGroup[] = [
         pages: [
             { id: 'E-06', name: 'Project Map', userType: 'Employee' },
             { id: 'E-14', name: 'Project Hub', userType: 'Employee' },
-            { id: 'E-18', name: 'Report Builder', userType: 'Employee' },
-            { id: 'E-19', name: 'Line Item Catalog', userType: 'Employee' },
             { id: 'E-23', name: 'Quote Builder', userType: 'Employee' },
             { id: 'E-38', name: 'Weather Guide', userType: 'Employee' },
             { id: 'E-21', name: 'My Info', userType: 'Employee' },
@@ -104,14 +108,30 @@ export const PAGE_GROUPS: PageGroup[] = [
         ]
     },
     {
-        userType: 'Employee',
+        userType: 'Admin',
+        label: 'MANAGEMENT TOOLS',
+        pages: [
+            { id: 'E-18', name: 'Report Builder', userType: 'Admin' },
+            { id: 'E-19', name: 'Line Item Catalog', userType: 'Admin' },
+        ]
+    },
+    {
+        userType: 'Admin',
         label: 'ADMINISTRATION',
         pages: [
-            { id: 'A-01', name: 'Admin Dashboard', userType: 'Employee' },
-            { id: 'A-02', name: 'User Management', userType: 'Employee' },
-            { id: 'A-03', name: 'Estimate Pricing', userType: 'Employee' },
-            { id: 'A-04', name: 'Backend & API', userType: 'Employee' },
-            { id: 'A-05', name: 'Line Item Master', userType: 'Employee' },
+            { id: 'A-01', name: 'Admin Dashboard', userType: 'Admin' },
+            { id: 'A-02', name: 'User Management', userType: 'Admin' },
+            { id: 'A-03', name: 'Estimate Pricing', userType: 'Admin' },
+            { id: 'A-04', name: 'Backend & API', userType: 'Admin' },
+            { id: 'A-05', name: 'Line Item Master', userType: 'Admin' },
+        ]
+    },
+    {
+        userType: 'Super Admin',
+        label: 'SYSTEM CONTROL',
+        pages: [
+            { id: 'SA-01', name: 'Role Management', userType: 'Super Admin' },
+            { id: 'SA-02', name: 'Global Settings', userType: 'Super Admin' },
         ]
     },
     {
