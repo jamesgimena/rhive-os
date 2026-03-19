@@ -3,14 +3,18 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import StatusBadge from '../components/StatusBadge';
 import { useMockDB } from '../contexts/MockDatabaseContext';
+import { useNavigation } from '../contexts/NavigationContext';
 import { CircuitryBackground } from '../components/CircuitryBackground';
 import { RhiveLogo, Info as ExclamationTriangleIcon, ClockIcon } from '../components/icons';
 import { cn } from '../lib/utils'; // Assuming cn utility exists
 
 const QuotePage: React.FC = () => {
     const { projects, currentUser } = useMockDB();
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projects[0]?._id || null);
-    const selectedProject = projects.find(p => p._id === selectedProjectId);
+    const { selectedProjectId, setSelectedProjectId } = useNavigation();
+    
+    // Fallback if no selected project, but ideally pipeline routes us here with one
+    const activeId = selectedProjectId || projects[0]?._id || null;
+    const selectedProject = projects.find(p => p._id === activeId || (p.id && p.id === activeId));
 
     // RPSP Logic (Mocked)
     const RPSP_WINDOW_HOURS = 48;
@@ -60,18 +64,18 @@ const QuotePage: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
                     {projects.map(p => (
                         <div
-                            key={p._id}
-                            onClick={() => setSelectedProjectId(p._id)}
+                            key={p._id || p.id}
+                            onClick={() => setSelectedProjectId(p._id || p.id)}
                             className={cn(
                                 "p-4 rounded-xl border cursor-pointer transition-all duration-200",
-                                selectedProjectId === p._id
+                                activeId === (p._id || p.id)
                                     ? "bg-[#ec028b]/10 border-[#ec028b] shadow-[0_0_15px_rgba(236,2,139,0.2)]"
                                     : "bg-gray-900/40 border-gray-800 hover:border-gray-600"
                             )}
                         >
                             <p className="font-bold text-white text-sm">{p.name}</p>
                             <div className="flex justify-between items-center mt-2">
-                                <span className="text-xs text-gray-400">ID: {p._id.split('-').pop()}</span>
+                                <span className="text-xs text-gray-400">ID: {(p._id || p.id || '').split('-').pop()}</span>
                                 <StatusBadge status={p.current_stage === 'Quote' ? 'pending' : 'active'} />
                             </div>
                         </div>

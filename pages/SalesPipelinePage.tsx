@@ -14,7 +14,7 @@ import {
     ClockIcon
 } from '../components/icons';
 import { projectService } from '../lib/firebaseService';
-import { cn } from '../lib/utils';
+import { cn, getStagePageId } from '../lib/utils';
 
 // The 4 early-stage tabs this page focuses on
 const TABS = ['Lead', 'Estimate', 'Quote', 'Sign & Verify'] as const;
@@ -54,8 +54,13 @@ const SalesPipelinePage: React.FC = () => {
     const handleProjectAction = (projectId: string, action: 'estimate' | 'quote' | 'view') => {
         setSelectedProjectId(projectId);
         if (action === 'estimate') setActivePageId('E-EST-TOOL');
-        else if (action === 'quote') setActivePageId('E-06');
-        else if (action === 'view') setActivePageId('E-G-01');
+        else if (action === 'quote') setActivePageId('E-G-02');
+        else if (action === 'view') setActivePageId('E-08');
+    };
+
+    const handleCardClick = (project: any) => {
+        setSelectedProjectId(project.id);
+        setActivePageId(getStagePageId(project.current_stage));
     };
 
     const getAddress = (project: any): string => {
@@ -66,7 +71,7 @@ const SalesPipelinePage: React.FC = () => {
     };
 
     const renderProjectCard = (project: any) => (
-        <div key={project.id} className="bg-gray-900/50 border border-gray-700 p-5 rounded-xl hover:border-[#ec028b] transition-all duration-300 group shadow-lg">
+        <div key={project.id} onClick={() => handleCardClick(project)} className="bg-gray-900/50 border border-gray-700 p-5 rounded-xl hover:border-[#ec028b] transition-all duration-300 group shadow-lg cursor-pointer">
             <div className="flex justify-between items-start mb-3">
                 <div className="flex-1 min-w-0 pr-2">
                     <h3 className="text-white font-bold text-lg group-hover:text-[#ec028b] transition-colors truncate">
@@ -102,11 +107,11 @@ const SalesPipelinePage: React.FC = () => {
             <div className="flex gap-3 pt-4 border-t border-gray-800">
                 {activeTab === 'Lead' && (
                     <>
-                        <Button size="sm" onClick={() => handleProjectAction(project.id, 'estimate')} className="flex-1">
+                        <Button size="sm" onClick={(e) => { e.stopPropagation(); handleProjectAction(project.id, 'estimate'); }} className="flex-1">
                             <CalculatorIcon className="w-4 h-4 mr-2" />
                             Estimator
                         </Button>
-                        <Button size="sm" variant="secondary" onClick={() => handleProjectAction(project.id, 'view')} className="flex-1">
+                        <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); handleProjectAction(project.id, 'view'); }} className="flex-1">
                             <UserIcon className="w-4 h-4 mr-2" />
                             Profile
                         </Button>
@@ -114,18 +119,18 @@ const SalesPipelinePage: React.FC = () => {
                 )}
                 {activeTab === 'Estimate' && (
                     <>
-                        <Button size="sm" onClick={() => handleProjectAction(project.id, 'estimate')} className="flex-1">
+                        <Button size="sm" onClick={(e) => { e.stopPropagation(); handleProjectAction(project.id, 'estimate'); }} className="flex-1">
                             <CalculatorIcon className="w-4 h-4 mr-2" />
                             Open Tool
                         </Button>
-                        <Button size="sm" variant="secondary" onClick={() => handleProjectAction(project.id, 'quote')} className="flex-1">
+                        <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); handleProjectAction(project.id, 'quote'); }} className="flex-1">
                             <DocumentTextIcon className="w-4 h-4 mr-2" />
                             Build Quote
                         </Button>
                     </>
                 )}
                 {activeTab === 'Quote' && (
-                    <Button size="sm" onClick={() => handleProjectAction(project.id, 'quote')} className="w-full">
+                    <Button size="sm" onClick={(e) => { e.stopPropagation(); handleProjectAction(project.id, 'quote'); }} className="w-full">
                         <PencilSquareIcon className="w-4 h-4 mr-2" />
                         Edit / Send Quote
                     </Button>
