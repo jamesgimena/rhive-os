@@ -15,7 +15,7 @@ import {
     PlusIcon
 } from '../components/icons';
 import { useNavigation } from '../contexts/NavigationContext';
-import { cn } from '../lib/utils';
+import { cn, getStagePageId } from '../lib/utils';
 import { firestoreService, contactService, projectService } from '../lib/firebaseService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ const stageBadgeColor = (stage?: string) => {
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 const GlobalNavCustomerLookup: React.FC = () => {
-    const { setActivePageId, setSelectedPropertyId, setSelectedProjectId } = useNavigation();
+    const { setActivePageId, setSelectedPropertyId, setSelectedProjectId, setSelectedContactId } = useNavigation();
 
     // ── Firebase State ──
     const [contacts, setContacts] = useState<FirebaseContact[]>([]);
@@ -201,16 +201,17 @@ const GlobalNavCustomerLookup: React.FC = () => {
 
     const handleProjectClick = (proj: FirebaseProject) => {
         setSelectedProjectId(proj.id);
-        setActivePageId('E-05'); // Pipeline/Deals page
+        setActivePageId(getStagePageId(proj.current_stage));
     };
 
     const handleContactClick = (c: FirebaseContact) => {
-        setActivePageId('E-24'); // Contacts/Vendors page
+        setSelectedContactId(c.id);
+        setActivePageId('E-10'); // Contact Profile page
     };
 
     const handlePropertyClick = (p: FirebaseProperty) => {
         setSelectedPropertyId(p.id);
-        setActivePageId('E-12'); // Property page
+        setActivePageId('E-12'); // Property Profile page
     };
 
     const anyLoading = loadingContacts || loadingProjects || loadingProperties;
