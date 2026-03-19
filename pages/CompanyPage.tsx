@@ -6,12 +6,12 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { projectService } from '../lib/firebaseService';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { UserIcon, BriefcaseIcon, MailIcon, ChevronRightIcon } from '../components/icons';
+import { UserIcon, BriefcaseIcon, MailIcon } from '../components/icons';
 import { getStagePageId } from '../lib/utils';
 
 const CompanyPage: React.FC = () => {
     const { selectedAccountId, setActivePageId, setSelectedProjectId } = useNavigation();
-    
+
     const [account, setAccount] = useState<any>(null);
     const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ const CompanyPage: React.FC = () => {
             return;
         }
 
-        const docRef = doc(db, 'accounts', selectedAccountId);
+        const docRef = doc(db, 'users', selectedAccountId);
         const unsub = onSnapshot(docRef, (snap) => {
             if (snap.exists()) {
                 setAccount({ id: snap.id, ...snap.data() });
@@ -41,7 +41,7 @@ const CompanyPage: React.FC = () => {
         if (!selectedAccountId) return;
 
         const unsub = projectService.subscribe((allProjects) => {
-            const myProjects = allProjects.filter(p => 
+            const myProjects = allProjects.filter(p =>
                 p.user_id === selectedAccountId || p.account_id === selectedAccountId
             );
             setProjects(myProjects);
@@ -106,24 +106,25 @@ const CompanyPage: React.FC = () => {
                         ) : (
                             <ul className="space-y-3 p-1">
                                 {projects.map(p => (
-                                    <li 
-                                        key={p.id} 
+                                    <li
+                                        key={p.id}
                                         onClick={() => handleProjectClick(p)}
                                         className="group cursor-pointer text-gray-300 p-4 bg-gray-900/40 border border-gray-800 rounded-xl flex justify-between items-center hover:border-[#ec028b]/50 transition-all hover:bg-gray-900/60"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-[#ec028b] group-hover:border-[#ec028b]/50">
+                                            <div className="w-8 h-8 rounded bg-gray-900 border border-gray-800 flex items-center justify-center text-[#ec028b] group-hover:border-[#ec028b]/50">
                                                 <BriefcaseIcon className="w-4 h-4" />
                                             </div>
                                             <span className="font-bold">{p.name || 'Unnamed Project'}</span>
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <span className="text-[10px] bg-gray-900/50 border border-gray-800 px-2 py-1 rounded-full text-gray-500 group-hover:text-[#ec028b] group-hover:border-[#ec028b]/30">
+                                            <span className="text-[10px] bg-gray-900/50 border border-gray-800 px-2 py-1 rounded text-gray-500 group-hover:text-[#ec028b] group-hover:border-[#ec028b]/30">
                                                 {p.current_stage || 'Lead'}
                                             </span>
                                             <div className="w-6 h-6 rounded-full bg-black border border-gray-700 flex items-center justify-center group-hover:bg-[#ec028b] group-hover:border-[#ec028b] group-hover:text-white transition-all text-gray-500">
-                                                 <ChevronRightIcon className="h-3 w-3 transition-transform duration-300 transform rotate-0" />
-                                             </div>
+                                                {/* Arrow icon would go here but keep it simple */}
+                                                →
+                                            </div>
                                         </div>
                                     </li>
                                 ))}

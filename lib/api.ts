@@ -15,8 +15,8 @@ export async function createProject(data: ProjectInput) {
         throw new Error(result.error as string || 'Failed to create project');
     }
 
-    // Fetch the full project to return it, maintaining backward compatibility
-    const fullProjectResult = await projectService.getFullProject(result.projectId!);
+    // Fetch the full project from the 'leads' collection (second arg = true)
+    const fullProjectResult = await projectService.getFullProject(result.projectId!, true);
     if (fullProjectResult.success) {
         return fullProjectResult.data;
     } else {
