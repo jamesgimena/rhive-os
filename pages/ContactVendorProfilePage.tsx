@@ -71,13 +71,7 @@ const ContactVendorProfilePage: React.FC = () => {
     }
 
     return (
-        <PageContainer title={contractor.name} description={contractor.type}>
-             <div className="absolute top-6 right-10">
-                <Button>
-                    <ShareIcon className="w-5 h-5 mr-2" />
-                    Share Pricing Form
-                </Button>
-            </div>
+         <PageContainer title={contractor.name} description={contractor.type}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Contact Info Column */}
                 <div className="md:col-span-1 space-y-8">

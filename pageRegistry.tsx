@@ -47,7 +47,8 @@ import UserManagementPage from './pages/UserManagementPage'; // A-02
 import AdminDashboardPage from './pages/AdminDashboardPage'; // A-01
 import RoleManagementPage from './pages/RoleManagementPage'; // SA-01
 import CustomerTrackerPage from './pages/CustomerTrackerPage'; // C-Tracker
-import SimulationGuidePage from './pages/SimulationGuidePage'; // (Simulation)
+import SimulationGuidePage from './pages/SimulationGuidePage';
+import PreConversionRecordPage from './pages/PreConversionRecordPage'; // (Simulation)
 
 // Specific stage pages
 import LeadPage from './pages/LeadPage'; // E-26
@@ -95,6 +96,7 @@ export const pageComponentMap: Record<string, React.FC> = {
   'E-01': EmployeeHomepage,
   'E-02': GlobalNavCustomerLookup,
   'E-02a': CustomerInputPage,
+  'E-TEMP': PreConversionRecordPage,
   'E-03': () => <Placeholder name="AI ASSISTANT (GLOBAL)" />,
   'E-04': EmployeeTimeoffPage,
   'E-05': EmployeePipelinePage,

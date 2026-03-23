@@ -199,19 +199,32 @@ const GlobalNavCustomerLookup: React.FC = () => {
     const getPropertyAddress = (p: FirebaseProperty) =>
         p.address_full || [p.property_address, p.city, p.state, p.zip].filter(Boolean).join(', ') || 'Unknown Address';
 
+    const isLeadStage = (stage?: string) => {
+        const s = (stage || '').toLowerCase().trim();
+        return s === 'lead' || s.includes('stage 1');
+    };
+
     const handleProjectClick = (proj: FirebaseProject) => {
         setSelectedProjectId(proj.id);
         setActivePageId(getStagePageId(proj.current_stage));
     };
 
     const handleContactClick = (c: FirebaseContact) => {
+        const contactProjects = projects.filter(p => 
+            p.user_id === c.id || p.account_id === c.id || p.owner_id === c.id || p.project_id === c.id || (p.contacts && p.contacts.some((cp: any) => cp.id === c.id))
+        );
+        const isConverted = contactProjects.length > 0 && contactProjects.some(p => !isLeadStage(p.current_stage));
+
         setSelectedContactId(c.id);
-        setActivePageId('E-10'); // Contact Profile page
+        setActivePageId(isConverted ? 'E-10' : 'E-TEMP'); // Contact Profile page or Pre-conversion
     };
 
     const handlePropertyClick = (p: FirebaseProperty) => {
+        const propProjects = projects.filter(proj => proj.property_id === p.id);
+        const isConverted = propProjects.length > 0 && propProjects.some(proj => !isLeadStage(proj.current_stage));
+
         setSelectedPropertyId(p.id);
-        setActivePageId('E-12'); // Property Profile page
+        setActivePageId(isConverted ? 'E-12' : 'E-TEMP'); // Property Profile page or Pre-conversion
     };
 
     const anyLoading = loadingContacts || loadingProjects || loadingProperties;

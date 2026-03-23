@@ -49,9 +49,7 @@ const ProjectProfilePage: React.FC = () => {
     }
 
     const handleOpenStage = () => {
-        if (project.current_stage) {
-            setActivePageId(getStagePageId(project.current_stage));
-        }
+        setActivePageId('E-05'); // Redirect to Sales Pipeline Board
     };
 
     return (
