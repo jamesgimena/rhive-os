@@ -8,12 +8,12 @@ import { PAGE_GROUPS } from '../constants';
 const ContactsVendorsPage: React.FC = () => {
     const page = PAGE_GROUPS.flatMap(g => g.pages).find(p => p.id === 'E-09');
 
-    const contacts = [
-        { name: 'Quality & Roofing', type: 'Contractor', email: 'contact@quality.com', icon: <BuildingStorefrontIcon className="w-8 h-8 text-[#ec028b]" /> },
-        { name: 'ABC Supply', type: 'Supplier', email: 'sales@abc.com', icon: <TruckIcon className="w-8 h-8 text-[#ec028b]" /> },
-        { name: 'John Doe', type: 'Customer', email: 'john.d@email.com', icon: <UserIcon className="w-8 h-8 text-[#ec028b]" /> },
-        { name: 'Jane Smith', type: 'Customer', email: 'jane.s@email.com', icon: <UserIcon className="w-8 h-8 text-[#ec028b]" /> },
-    ];
+    const [contacts, setContacts] = React.useState<any[]>([]);
+    
+    React.useEffect(() => {
+        // Here we could fetch from contactService, but since this is just a placeholder page right now
+        // we'll leave it empty to conform to "Remove dummy contents".
+    }, []);
     
     return (
         <PageContainer title={page?.name || 'Contacts & Vendors'} description={page?.description || 'A directory of all contacts.'}>

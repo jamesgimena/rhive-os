@@ -5,11 +5,13 @@ interface CardProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }
 
-const Card: React.FC<CardProps> = ({ title, children, footer, className = '' }) => {
+const Card: React.FC<CardProps> = ({ title, children, footer, className = '', onClick }) => {
   return (
     <div
+      onClick={onClick}
       className={`relative bg-gray-900/80 backdrop-blur-md border border-gray-700/50 shadow-lg text-white transition-all duration-300 ease-in-out hover:border-[#ec028b]/50 hover:shadow-[0_0_25px_rgba(236,2,139,0.1)] ${className}`}
       style={{
         clipPath: 'polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px)',

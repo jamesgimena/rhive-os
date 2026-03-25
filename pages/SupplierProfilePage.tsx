@@ -18,24 +18,17 @@ const SupplierProfilePage: React.FC = () => {
     const { currentUser } = useMockDB();
 
     const companyData = {
-        name: currentUser?.name || 'ABC Supply Co.',
-        ein: '12-3456789',
-        hq: '789 Industrial Way, Salt Lake City, UT 84104',
-        paymentTerms: 'Net 30',
-        contacts: [
-            { name: 'David Smith', role: 'Account Manager', email: 'd.smith@abc.com', phone: '(801) 555-0900' },
-            { name: 'Sarah Miller', role: 'Accounts Receivable', email: 'billing@abc.com', phone: '(801) 555-0901' }
-        ],
-        documents: [
-            { name: 'Master Purchase Agreement', status: 'verified', date: '2023-11-15' },
-            { name: 'W-9 Form', status: 'verified', date: '2024-01-10' },
-            { name: 'Insurance Certificate', status: 'expiring', date: '2024-08-01' }
-        ]
+        name: currentUser?.name || 'Unnamed Supplier',
+        ein: currentUser?.ein || '',
+        hq: currentUser?.address || '',
+        paymentTerms: currentUser?.paymentTerms || 'Net 30',
+        contacts: currentUser?.contacts || [],
+        documents: currentUser?.documents || []
     };
 
     return (
         <PageContainer 
-            title="Supplier Company Profile" 
+            title="Supplier Company" 
             description="Manage your business identity, legal documentation, and primary contacts."
         >
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

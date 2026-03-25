@@ -57,7 +57,7 @@ interface LocationState {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const toF = (c: number) => Math.round(c * 9 / 5 + 32);
+const toC = (c: number) => Math.round(c);
 const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 const getDayName = (d: { year: number; month: number; day: number }, short = false) => {
@@ -120,15 +120,15 @@ const StatPill = ({ label, value, sub }: { label: string; value: string; sub?: s
 
 const ForecastCard = ({ day, isToday }: { day: DayForecast; isToday: boolean }) => {
     const icon = weatherIcon(day.daytimeForecast?.weatherCondition?.type || 'CLEAR');
-    const maxF = toF(day.maxTemperature?.degrees ?? 0);
-    const minF = toF(day.minTemperature?.degrees ?? 0);
+    const maxC = toC(day.maxTemperature?.degrees ?? 0);
+    const minC = toC(day.minTemperature?.degrees ?? 0);
     const rain = day.daytimeForecast?.precipitation?.probability?.percent ?? 0;
     const desc = day.daytimeForecast?.weatherCondition?.description?.text || '';
 
     return (
         <div className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-300 ${isToday
-                ? 'bg-gradient-to-b from-[#ec028b]/20 to-black/40 border-[#ec028b]/50 shadow-[0_0_20px_rgba(236,2,139,0.15)]'
-                : 'bg-black/30 border-white/10 hover:border-white/20 hover:bg-white/5'
+            ? 'bg-gradient-to-b from-[#ec028b]/20 to-black/40 border-[#ec028b]/50 shadow-[0_0_20px_rgba(236,2,139,0.15)]'
+            : 'bg-black/30 border-white/10 hover:border-white/20 hover:bg-white/5'
             }`}>
             {isToday && (
                 <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest bg-[#ec028b] text-white px-2 py-0.5 rounded-full">
@@ -139,9 +139,9 @@ const ForecastCard = ({ day, isToday }: { day: DayForecast; isToday: boolean }) 
             <span className="text-3xl">{icon}</span>
             <p className="text-[11px] text-gray-400 text-center leading-tight">{desc}</p>
             <div className="flex items-center gap-2 mt-1">
-                <span className="text-white font-bold text-sm">{maxF}°</span>
+                <span className="text-white font-bold text-sm">{maxC}°</span>
                 <span className="text-gray-600 text-sm">/</span>
-                <span className="text-gray-400 text-sm">{minF}°</span>
+                <span className="text-gray-400 text-sm">{minC}°</span>
             </div>
             {rain > 0 && (
                 <div className="flex items-center gap-1 text-blue-400 text-[11px]">
@@ -230,7 +230,7 @@ const WeatherGuideWidgetPage: React.FC = () => {
 
     const tempUnit = units === 'imperial' ? '°F' : '°C';
     const displayTemp = (t: TempValue) =>
-        units === 'imperial' ? `${toF(t.degrees)}${tempUnit}` : `${Math.round(t.degrees)}${tempUnit}`;
+        units === 'imperial' ? `${Math.round(t.degrees * 9 / 5 + 32)}${tempUnit}` : `${Math.round(t.degrees)}${tempUnit}`;
 
     const uv = current ? uvLabel(current.uvIndex) : null;
 
@@ -288,8 +288,8 @@ const WeatherGuideWidgetPage: React.FC = () => {
                                 key={u}
                                 onClick={() => setUnits(u)}
                                 className={`px-4 py-2.5 text-sm font-semibold transition-all ${units === u
-                                        ? 'bg-[#ec028b]/20 text-[#ec028b]'
-                                        : 'text-gray-500 hover:text-gray-300'
+                                    ? 'bg-[#ec028b]/20 text-[#ec028b]'
+                                    : 'text-gray-500 hover:text-gray-300'
                                     }`}
                             >
                                 {u === 'imperial' ? '°F' : '°C'}
@@ -404,7 +404,9 @@ const WeatherGuideWidgetPage: React.FC = () => {
                         </h3>
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3">
                             {forecast.map((day, i) => (
-                                <ForecastCard key={i} day={day} isToday={i === 0} />
+                                <div key={i}>
+                                    <ForecastCard day={day} isToday={i === 0} />
+                                </div>
                             ))}
                         </div>
                     </div>

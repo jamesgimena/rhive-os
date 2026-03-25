@@ -2,17 +2,32 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import StatusBadge from '../components/StatusBadge';
-import { useMockDB } from '../contexts/MockDatabaseContext';
+import { useNavigation } from '../contexts/NavigationContext';
+import { projectService } from '../lib/firebaseService';
 import { CircuitryBackground } from '../components/CircuitryBackground';
 import { RhiveLogo, Info as ExclamationTriangleIcon, ClockIcon } from '../components/icons';
 import { cn } from '../lib/utils'; // Assuming cn utility exists
 
 const QuotePage: React.FC = () => {
-    const { projects, currentUser } = useMockDB();
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projects[0]?._id || null);
-    const selectedProject = projects.find(p => p._id === selectedProjectId);
+    const { selectedProjectId, setSelectedProjectId } = useNavigation();
+    const [projects, setProjects] = useState<any[]>([]);
 
-    // RPSP Logic (Mocked)
+    useEffect(() => {
+        const unsub = projectService.subscribe((data: any[]) => {
+            // Only show projects in the Quote stage (or closely related)
+            const quoteProjects = data.filter(p => 
+                (p.current_stage || '').toLowerCase().includes('quote')
+            );
+            setProjects(quoteProjects);
+        });
+        return () => unsub();
+    }, []);
+    
+    // Auto-select first project if none selected
+    const activeId = selectedProjectId || (projects.length > 0 ? projects[0].id : null);
+    const selectedProject = projects.find(p => p.id === activeId);
+
+    // RPSP Logic (Mocked Timer for now)
     const RPSP_WINDOW_HOURS = 48;
     const [timeRemaining, setTimeRemaining] = useState<number>(0);
 
@@ -43,9 +58,14 @@ const QuotePage: React.FC = () => {
     const discountAmount = isRPSPActive ? (projectTotal * 0.10) : 0;
     const finalTotal = projectTotal - discountAmount;
 
-    // Dual-Math Logic (Admin/Employee Only)
-    const internalCost = projectTotal * 0.65; // Mock 35% margin
+    // Dual-Math Logic
+    const internalCost = projectTotal * 0.65; // Estimated 35% margin for display purposes
     const margin = projectTotal - internalCost;
+
+    // Use actual quote items if they exist, otherwise fallback to a generic line item
+    const quoteBreakdown = selectedProject?.quote?.breakdown || [
+        { name: selectedProject?.project_type ? `${selectedProject.project_type} System Installation` : 'Project System Installation', price: projectTotal }
+    ];
 
     return (
         <div className="relative h-screen w-full bg-black overflow-hidden flex">
@@ -60,18 +80,18 @@ const QuotePage: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
                     {projects.map(p => (
                         <div
-                            key={p._id}
-                            onClick={() => setSelectedProjectId(p._id)}
+                            key={p.id}
+                            onClick={() => setSelectedProjectId(p.id)}
                             className={cn(
                                 "p-4 rounded-xl border cursor-pointer transition-all duration-200",
-                                selectedProjectId === p._id
+                                activeId === p.id
                                     ? "bg-[#ec028b]/10 border-[#ec028b] shadow-[0_0_15px_rgba(236,2,139,0.2)]"
                                     : "bg-gray-900/40 border-gray-800 hover:border-gray-600"
                             )}
                         >
                             <p className="font-bold text-white text-sm">{p.name}</p>
                             <div className="flex justify-between items-center mt-2">
-                                <span className="text-xs text-gray-400">ID: {p._id.split('-').pop()}</span>
+                                <span className="text-xs text-gray-400">ID: {(p.id || '').slice(-6)}</span>
                                 <StatusBadge status={p.current_stage === 'Quote' ? 'pending' : 'active'} />
                             </div>
                         </div>
@@ -108,8 +128,7 @@ const QuotePage: React.FC = () => {
                         </div>
 
                         {/* Dual-Math Dashboard (Internal View) */}
-                        {currentUser?.role !== 'Customer' && (
-                            <div className="grid grid-cols-2 gap-6 p-6 border border-gray-800 rounded-2xl bg-black/40 relative overflow-hidden">
+                        <div className="grid grid-cols-2 gap-6 p-6 border border-gray-800 rounded-2xl bg-black/40 relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#ec028b] to-transparent opacity-50"></div>
                                 <div className="absolute top-2 right-2 text-[9px] text-gray-600 font-bold uppercase border border-gray-800 px-2 rounded">Internal Data</div>
 
@@ -122,25 +141,18 @@ const QuotePage: React.FC = () => {
                                     <p className="text-2xl font-mono text-[#ec028b] font-bold">+${margin.toLocaleString()}</p>
                                 </div>
                             </div>
-                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             {/* Line Items */}
                             <div className="md:col-span-2 space-y-6">
                                 <Card title="Project Specifications">
                                     <div className="space-y-4">
-                                        <div className="flex justify-between py-3 border-b border-gray-800">
-                                            <span className="text-gray-300">Owens Corning Duration Shingles</span>
-                                            <span className="text-white font-mono">${(projectTotal * 0.8).toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between py-3 border-b border-gray-800">
-                                            <span className="text-gray-300">Synthetic Underlayment (RhinoRoof)</span>
-                                            <span className="text-white font-mono">${(projectTotal * 0.1).toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between py-3 border-b border-gray-800">
-                                            <span className="text-gray-300">Ice & Water Shield (Valleys/Eaves)</span>
-                                            <span className="text-white font-mono">${(projectTotal * 0.1).toLocaleString()}</span>
-                                        </div>
+                                        {quoteBreakdown.map((item: any, idx: number) => (
+                                            <div key={idx} className="flex justify-between py-3 border-b border-gray-800">
+                                                <span className="text-gray-300">{item.name}</span>
+                                                <span className="text-white font-mono">${(item.price || 0).toLocaleString()}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </Card>
                             </div>

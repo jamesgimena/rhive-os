@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import PageContainer from '../components/PageContainer';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -12,13 +12,400 @@ import {
     ChatBubbleLeftRightIcon,
     DocumentDuplicateIcon,
     DocumentTextIcon,
-    BoltIcon
+    BoltIcon,
+    MapPinIcon,
+    XIcon,
+    ArrowRightIcon,
+    ChartPieIcon,
+    ShieldCheckIcon,
 } from '../components/icons';
 import { PAGE_GROUPS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useMockDB } from '../contexts/MockDatabaseContext';
-import { projectService, dashboardService } from '../lib/firebaseService';
+import { projectService, dashboardService, firestoreService } from '../lib/firebaseService';
 import WeatherForecastStrip from '../components/WeatherForecastStrip';
+import { getStagePageId } from '../lib/utils';
+
+// ─── Global Dispatch Inline Search ────────────────────────────────────────────
+const GlobalDispatchSearch: React.FC = () => {
+    const { setActivePageId, setSelectedContactId, setSelectedProjectId, setSelectedPropertyId } = useNavigation();
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState('');
+    const [contacts, setContacts] = useState<any[]>([]);
+    const [projects, setProjects] = useState<any[]>([]);
+    const [properties, setProperties] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Subscribe to all three collections once
+    useEffect(() => {
+        const unsubContacts = firestoreService.subscribeToDocuments('contacts', (data) => {
+            setContacts(data);
+            setLoading(false);
+        });
+        const unsubProjects = projectService.subscribe((data) => {
+            setProjects(data);
+        });
+        const unsubProps = firestoreService.subscribeToDocuments('properties', (data) => {
+            setProperties(data);
+        });
+        return () => { unsubContacts(); unsubProjects(); unsubProps(); };
+    }, []);
+
+    // Close when clicking outside
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+                setOpen(false);
+                setQuery('');
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const lq = query.toLowerCase().trim();
+
+    const filteredContacts = lq
+        ? contacts.filter(c => {
+            const name = `${c.first_name || ''} ${c.last_name || ''} ${c.name || ''}`.toLowerCase();
+            return name.includes(lq) || (c.email || '').toLowerCase().includes(lq) || (c.phone || '').includes(lq);
+        })
+        : contacts.slice(0, 4);
+
+    const filteredProjects = lq
+        ? projects.filter(p =>
+            (p.name || '').toLowerCase().includes(lq) ||
+            (p.current_stage || '').toLowerCase().includes(lq) ||
+            (p.property_address || '').toLowerCase().includes(lq)
+        )
+        : projects.slice(0, 4);
+
+    const filteredProperties = lq
+        ? properties.filter(p =>
+            (p.address_full || '').toLowerCase().includes(lq) ||
+            (p.city || '').toLowerCase().includes(lq) ||
+            (p.type || '').toLowerCase().includes(lq)
+        )
+        : properties.slice(0, 3);
+
+    const hasResults = filteredContacts.length + filteredProjects.length + filteredProperties.length > 0;
+    const totalCount = filteredContacts.length + filteredProjects.length + filteredProperties.length;
+
+    const handleOpen = () => {
+        setOpen(true);
+        setTimeout(() => inputRef.current?.focus(), 50);
+    };
+
+    const go = (pageId: string) => {
+        setOpen(false);
+        setQuery('');
+        setActivePageId(pageId);
+    };
+
+    const goContact = (id: string) => {
+        setOpen(false);
+        setQuery('');
+        setSelectedContactId(id);
+        setActivePageId('E-10');
+    };
+
+    const goProject = (id: string, stage?: string) => {
+        setOpen(false);
+        setQuery('');
+        setSelectedProjectId(id);
+        setActivePageId(getStagePageId(stage));
+    };
+
+    const goProperty = (id: string) => {
+        setOpen(false);
+        setQuery('');
+        setSelectedPropertyId(id);
+        setActivePageId('E-12');
+    };
+
+    const stageBadge = (stage?: string) => {
+        const s = (stage || '').toLowerCase();
+        if (s.includes('lead')) return '#eab308';
+        if (s.includes('quote')) return '#60a5fa';
+        if (s.includes('sign')) return '#c084fc';
+        if (s.includes('install') || s.includes('progress')) return '#fb923c';
+        if (s.includes('complet') || s.includes('paid')) return '#4ade80';
+        return '#6b7280';
+    };
+
+    return (
+        <div ref={wrapperRef} style={{ position: 'relative' }}>
+            {/* ── Trigger Button (collapsed state) ── */}
+            {!open && (
+                <button
+                    onClick={handleOpen}
+                    id="global-dispatch-btn"
+                    className="group flex items-center px-4 py-2 bg-black/40 border border-[#ec028b] rounded-full hover:bg-[#ec028b] hover:text-white text-[#ec028b] transition-all duration-300 shadow-[0_0_10px_rgba(236,2,139,0.2)] hover:shadow-[0_0_20px_rgba(236,2,139,0.5)]"
+                >
+                    <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
+                    <span className="font-semibold text-sm">Global Dispatch</span>
+                </button>
+            )}
+
+            {/* ── Expanded Search Input ── */}
+            {open && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                        display: 'flex', alignItems: 'center',
+                        background: 'rgba(0,0,0,0.6)',
+                        border: '1px solid rgba(236,2,139,0.6)',
+                        borderRadius: 24,
+                        padding: '6px 14px',
+                        gap: 8,
+                        boxShadow: '0 0 16px rgba(236,2,139,0.18)',
+                        backdropFilter: 'blur(12px)',
+                        minWidth: 280,
+                    }}>
+                        <MagnifyingGlassIcon style={{ width: 16, height: 16, color: '#ec028b', flexShrink: 0 }} />
+                        <input
+                            ref={inputRef}
+                            id="global-dispatch-input"
+                            type="text"
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            placeholder="Search contacts, projects, properties…"
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                outline: 'none',
+                                color: '#ffffff',
+                                fontSize: 13,
+                                fontWeight: 500,
+                                width: '100%',
+                                letterSpacing: '0.01em',
+                            }}
+                        />
+                        {query && (
+                            <button
+                                onClick={() => setQuery('')}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', display: 'flex', padding: 0 }}
+                            >
+                                <XIcon style={{ width: 14, height: 14 }} />
+                            </button>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => { setOpen(false); setQuery(''); }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                        <XIcon className="w-3 h-3" />
+                        Cancel
+                    </button>
+                </div>
+            )}
+
+            {/* ── Dropdown Results Panel ── */}
+            {open && (
+                <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 10px)',
+                    right: 0,
+                    width: 420,
+                    maxHeight: 520,
+                    overflowY: 'auto',
+                    background: 'linear-gradient(140deg, rgba(6,4,14,0.98) 0%, rgba(12,6,22,0.98) 100%)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 16,
+                    boxShadow: '0 24px 60px rgba(0,0,0,0.9), 0 0 20px rgba(236,2,139,0.08)',
+                    backdropFilter: 'blur(24px)',
+                    zIndex: 99999,
+                    overflow: 'hidden',
+                }}>
+
+                    {/* Header */}
+                    <div style={{
+                        padding: '12px 16px 10px',
+                        borderBottom: '1px solid rgba(255,255,255,0.07)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#ec028b' }}>
+                            Global Dispatch
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: loading ? '#eab308' : '#4ade80' }} />
+                            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                {loading ? 'Syncing' : `${totalCount} results`}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style={{ maxHeight: 460, overflowY: 'auto' }}>
+
+                        {/* ── Contacts ── */}
+                        {filteredContacts.length > 0 && (
+                            <div>
+                                <div style={{ padding: '8px 16px 4px', fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
+                                    👤 People &amp; Contacts
+                                </div>
+                                {filteredContacts.slice(0, 5).map((c: any) => {
+                                    const name = c.first_name || c.last_name
+                                        ? `${c.first_name || ''} ${c.last_name || ''}`.trim()
+                                        : c.name || 'Unknown';
+                                    return (
+                                        <div
+                                            key={c.id}
+                                            onClick={() => goContact(c.id)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: 12,
+                                                padding: '10px 16px',
+                                                cursor: 'pointer',
+                                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                transition: 'background 0.15s',
+                                            }}
+                                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(236,2,139,0.07)')}
+                                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                        >
+                                            <div style={{
+                                                width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+                                                background: 'rgba(236,2,139,0.1)', border: '1px solid rgba(236,2,139,0.25)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}>
+                                                <UserIcon style={{ width: 16, height: 16, color: '#ec028b' }} />
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
+                                                <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {[c.role, c.email].filter(Boolean).join(' · ')}
+                                                </p>
+                                            </div>
+                                            <ArrowRightIcon style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* ── Projects ── */}
+                        {filteredProjects.length > 0 && (
+                            <div>
+                                <div style={{ padding: '8px 16px 4px', fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
+                                    💼 Active Projects
+                                </div>
+                                {filteredProjects.slice(0, 5).map((p: any) => (
+                                    <div
+                                        key={p.id}
+                                        onClick={() => goProject(p.id, p.current_stage)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 12,
+                                            padding: '10px 16px',
+                                            cursor: 'pointer',
+                                            borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                            transition: 'background 0.15s',
+                                        }}
+                                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(236,2,139,0.07)')}
+                                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                    >
+                                        <div style={{
+                                            width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+                                            background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.25)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            <BriefcaseIcon style={{ width: 16, height: 16, color: '#60a5fa' }} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name || 'Unnamed Project'}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                                {p.current_stage && (
+                                                    <span style={{
+                                                        fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+                                                        color: stageBadge(p.current_stage), border: `1px solid ${stageBadge(p.current_stage)}44`,
+                                                        background: `${stageBadge(p.current_stage)}18`, borderRadius: 4, padding: '1px 5px',
+                                                    }}>{p.current_stage}</span>
+                                                )}
+                                                {p.property_address && (
+                                                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.property_address}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <ArrowRightIcon style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* ── Properties ── */}
+                        {filteredProperties.length > 0 && (
+                            <div>
+                                <div style={{ padding: '8px 16px 4px', fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>
+                                    📍 Properties &amp; Sites
+                                </div>
+                                {filteredProperties.slice(0, 4).map((p: any) => {
+                                    const addr = p.address_full || [p.property_address, p.city, p.state].filter(Boolean).join(', ') || 'Unknown Address';
+                                    return (
+                                        <div
+                                            key={p.id}
+                                            onClick={() => goProperty(p.id)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: 12,
+                                                padding: '10px 16px',
+                                                cursor: 'pointer',
+                                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                transition: 'background 0.15s',
+                                            }}
+                                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(236,2,139,0.07)')}
+                                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                        >
+                                            <div style={{
+                                                width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+                                                background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}>
+                                                <MapPinIcon style={{ width: 16, height: 16, color: '#4ade80' }} />
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fff', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{addr}</p>
+                                                {p.type && (
+                                                    <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.type}</p>
+                                                )}
+                                            </div>
+                                            <ArrowRightIcon style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Empty state */}
+                        {!loading && !hasResults && (
+                            <div style={{ padding: '28px 16px', textAlign: 'center' }}>
+                                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
+                                    {lq ? `No results for "${query}"` : 'No records in Firebase yet.'}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* View all link */}
+                        {hasResults && (
+                            <div
+                                onClick={() => go('E-02')}
+                                style={{
+                                    padding: '10px 16px',
+                                    borderTop: '1px solid rgba(255,255,255,0.07)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                    cursor: 'pointer',
+                                    fontSize: 11, fontWeight: 700, color: '#ec028b',
+                                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                                    transition: 'background 0.15s',
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(236,2,139,0.07)')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            >
+                                Open Full Dispatch &nbsp;→
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 // Compact Session Widget
 const SessionWidget = () => {
@@ -40,11 +427,11 @@ const SessionWidget = () => {
             <div className="flex space-x-2">
                 <button
                     onClick={() => setActivePageId('E-03')}
-                    className="px-3 py-1.5 bg-black hover:bg-gray-900 text-xs text-white rounded-md border border-gray-700 hover:border-gray-500 transition-colors"
+                    className="px-3 py-1.5 bg-black hover:bg-gray-900 text-xs text-white rounded-full border border-gray-700 hover:border-gray-500 transition-colors"
                 >
                     My Info
                 </button>
-                <button className="px-3 py-1.5 bg-black hover:bg-gray-900 text-xs text-gray-400 hover:text-white rounded-md border border-gray-800 hover:border-gray-600 transition-colors">
+                <button className="px-3 py-1.5 bg-black hover:bg-gray-900 text-xs text-gray-400 hover:text-white rounded-full border border-gray-800 hover:border-gray-600 transition-colors">
                     Clock Out
                 </button>
             </div>
@@ -71,9 +458,169 @@ const StatCard = ({ label, value, icon: Icon, trend, loading }: { label: string,
     </div>
 );
 
+// --- Storm Alert Widget (always visible, location-aware) ---
+const GOOGLE_WEATHER_API_KEY = (import.meta as any).env?.VITE_GOOGLE_WEATHER_API_KEY || '';
+const WEATHER_BASE = 'https://weather.googleapis.com/v1';
+const DEFAULT_LAT = 39.7392;
+const DEFAULT_LON = -104.9903;
+const DEFAULT_CITY = 'Denver';
+
+const STORM_TYPES = new Set([
+    'THUNDERSTORM', 'TORNADO', 'HEAVY_RAIN', 'HAIL', 'FREEZING_RAIN',
+    'HEAVY_SNOW', 'SLEET', 'SHOWERS', 'SCATTERED_SHOWERS',
+]);
+
+const StormAlertWidget = () => {
+    const [hasStorm, setHasStorm] = useState(false);
+    const [stormDesc, setStormDesc] = useState('Hail expected in Denver Area');
+    const [cityName, setCityName] = useState(DEFAULT_CITY);
+    const { setActivePageId } = useNavigation();
+
+    // Get browser GPS coords, fallback to Denver
+    const getCoords = (): Promise<{ lat: number; lon: number }> =>
+        new Promise(resolve => {
+            if (!navigator.geolocation) { resolve({ lat: DEFAULT_LAT, lon: DEFAULT_LON }); return; }
+            navigator.geolocation.getCurrentPosition(
+                pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+                () => resolve({ lat: DEFAULT_LAT, lon: DEFAULT_LON }),
+                { timeout: 6000 }
+            );
+        });
+
+    // Free reverse-geocode → city name (no key needed)
+    const getCity = async (lat: number, lon: number): Promise<string> => {
+        try {
+            const r = await fetch(
+                `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+            );
+            if (!r.ok) return DEFAULT_CITY;
+            const d = await r.json();
+            return d.city || d.locality || d.principalSubdivision || DEFAULT_CITY;
+        } catch { return DEFAULT_CITY; }
+    };
+
+    useEffect(() => {
+        const run = async () => {
+            const { lat, lon } = await getCoords();
+            const city = await getCity(lat, lon);
+            setCityName(city);
+
+            // Demo mode when no API key – always show a storm alert
+            if (!GOOGLE_WEATHER_API_KEY) {
+                setHasStorm(true);
+                setStormDesc(`Hail expected in ${city} Area`);
+                return;
+            }
+
+            try {
+                const res = await fetch(
+                    `${WEATHER_BASE}/forecast/days:lookup?key=${GOOGLE_WEATHER_API_KEY}` +
+                    `&location.latitude=${lat}&location.longitude=${lon}&days=7&unitsSystem=METRIC`
+                );
+                if (!res.ok) return;
+                const data = await res.json();
+                const firstStorm = data.forecastDays?.find((d: any) => {
+                    const cond = d.daytimeForecast?.weatherCondition?.type || '';
+                    const thunderProb = d.daytimeForecast?.thunderstormProbability ?? 0;
+                    return STORM_TYPES.has(cond) || thunderProb >= 40;
+                });
+                if (firstStorm) {
+                    const desc = firstStorm.daytimeForecast?.weatherCondition?.description?.text || 'Storm Warning';
+                    setHasStorm(true);
+                    setStormDesc(`${desc} in ${city} Area`);
+                } else {
+                    setHasStorm(false);
+                    setStormDesc(`No active alerts near ${city}`);
+                }
+            } catch { /* ignore */ }
+        };
+        run();
+    }, []);
+
+    // ── Always visible: active storm = bold red/orange; calm = muted ──
+    return (
+        <div
+            className={hasStorm
+                ? 'rounded-xl p-4 flex items-center justify-between backdrop-blur-sm shadow-[0_0_20px_rgba(249,115,22,0.15)]'
+                : 'rounded-xl p-4 flex items-center justify-between backdrop-blur-sm'
+            }
+            style={{
+                background: hasStorm
+                    ? 'rgba(18,8,2,0.85)'
+                    : 'rgba(255,255,255,0.03)',
+                border: hasStorm
+                    ? '1px solid rgba(251,146,60,0.5)'
+                    : '1px solid rgba(255,255,255,0.08)',
+                transition: 'all 0.4s ease',
+            }}
+        >
+            {/* Icon box */}
+            <div className="flex items-center" style={{ gap: 14 }}>
+                <div style={{
+                    width: 44, height: 44, flexShrink: 0,
+                    borderRadius: '50%',
+                    background: hasStorm ? 'rgba(234,88,12,0.22)' : 'rgba(255,255,255,0.05)',
+                    border: hasStorm ? '1px solid rgba(251,146,60,0.45)' : '1px solid rgba(255,255,255,0.1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 22,
+                }}>
+                    {hasStorm ? '🌨️' : '🌤️'}
+                </div>
+
+                {/* Text */}
+                <div>
+                    <p style={{
+                        margin: 0,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: hasStorm ? '#fb923c' : 'rgba(255,255,255,0.45)',
+                        lineHeight: 1.25,
+                    }}>
+                        {hasStorm ? '⚠ Storm Alert' : 'Storm Alert'}
+                    </p>
+                    <p style={{
+                        margin: '3px 0 0',
+                        fontSize: 11,
+                        color: hasStorm ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.28)',
+                        lineHeight: 1.3,
+                        maxWidth: 180,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}>
+                        {stormDesc}
+                    </p>
+                </div>
+            </div>
+
+            {/* View button — always shown */}
+            <button
+                onClick={() => setActivePageId('E-38')}
+                style={{
+                    flexShrink: 0,
+                    padding: '6px 14px',
+                    borderRadius: 999,
+                    background: hasStorm ? 'rgba(251,146,60,0.15)' : 'rgba(255,255,255,0.06)',
+                    border: hasStorm ? '1px solid rgba(251,146,60,0.4)' : '1px solid rgba(255,255,255,0.1)',
+                    color: hasStorm ? '#fb923c' : 'rgba(255,255,255,0.35)',
+                    fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = hasStorm ? 'rgba(251,146,60,0.28)' : 'rgba(255,255,255,0.12)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = hasStorm ? 'rgba(251,146,60,0.15)' : 'rgba(255,255,255,0.06)'; }}
+            >
+                View
+            </button>
+        </div>
+    );
+};
+
 const EmployeeHomepage: React.FC = () => {
     const page = PAGE_GROUPS.flatMap(g => g.pages).find(p => p.id === 'E-01');
     const { setActivePageId } = useNavigation();
+    const { currentUser } = useMockDB();
 
     const [activity, setActivity] = useState<{ user: string; action: string; target: string; time: string }[]>([]);
     const [activityLoading, setActivityLoading] = useState(true);
@@ -148,7 +695,7 @@ const EmployeeHomepage: React.FC = () => {
             headerAction={
                 <div className="flex items-center space-x-3">
                     {/* 7-Day Weather Strip */}
-                    <WeatherForecastStrip />
+                    {/* Weather strip removed */}
                     {/* Divider */}
                     <div className="h-6 w-[1px] bg-gray-700/60" />
                     <button
@@ -158,13 +705,7 @@ const EmployeeHomepage: React.FC = () => {
                         <BoltIcon className="w-5 h-5 mr-2" />
                         Simulation Guide
                     </button>
-                    <button
-                        onClick={() => setActivePageId('E-G-01')}
-                        className="group flex items-center px-4 py-2 bg-black/40 border border-[#ec028b] rounded-full hover:bg-[#ec028b] hover:text-white text-[#ec028b] transition-all duration-300 shadow-[0_0_10px_rgba(236,2,139,0.2)] hover:shadow-[0_0_20px_rgba(236,2,139,0.5)]"
-                    >
-                        <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
-                        <span className="font-semibold text-sm">Global Dispatch</span>
-                    </button>
+                    <GlobalDispatchSearch />
                 </div>
             }
         >
@@ -210,7 +751,7 @@ const EmployeeHomepage: React.FC = () => {
                             <Button
                                 variant="secondary"
                                 className="flex-col h-24 hover:bg-gray-900 hover:border-[#ec028b]/50 hover:shadow-[0_0_15px_rgba(236,2,139,0.15)] transition-all bg-black/40 border-gray-700"
-                                onClick={() => setActivePageId('E-CUST-IN')}
+                                onClick={() => setActivePageId('E-02a')}
                             >
                                 <UserIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
                                 <span className="text-xs uppercase font-bold tracking-wide">New Intake</span>
@@ -218,25 +759,26 @@ const EmployeeHomepage: React.FC = () => {
                             <Button
                                 variant="secondary"
                                 className="flex-col h-24 hover:bg-gray-900 hover:border-[#ec028b]/50 hover:shadow-[0_0_15px_rgba(236,2,139,0.15)] transition-all bg-black/40 border-gray-700"
-                                onClick={() => setActivePageId('E-SALES')}
+                                onClick={() => setActivePageId('E-05')}
                             >
                                 <BriefcaseIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
-                                <span className="text-xs uppercase font-bold tracking-wide">Sales Hub</span>
+                                <span className="text-xs uppercase font-bold tracking-wide">Pipeline Overview</span>
                             </Button>
                             <Button
                                 variant="secondary"
                                 className="flex-col h-24 hover:bg-gray-900 hover:border-[#ec028b]/50 hover:shadow-[0_0_15px_rgba(236,2,139,0.15)] transition-all bg-black/40 border-gray-700"
-                                onClick={() => setActivePageId('E-PROD')}
+                                onClick={() => setActivePageId('E-06')}
                             >
                                 <CalendarDaysIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
-                                <span className="text-xs uppercase font-bold tracking-wide">Production</span>
+                                <span className="text-xs uppercase font-bold tracking-wide">Project Map</span>
                             </Button>
                             <Button
                                 variant="secondary"
                                 className="flex-col h-24 hover:bg-gray-900 hover:border-[#ec028b]/50 hover:shadow-[0_0_15px_rgba(236,2,139,0.15)] transition-all bg-black/40 border-gray-700"
-                                onClick={() => setActivePageId('E-RPT')}
+                                onClick={() => setActivePageId('E-18')}
+                                disabled={currentUser?.role !== 'Admin' && currentUser?.role !== 'Super Admin'}
                             >
-                                <DocumentDuplicateIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
+                                <ChartPieIcon className="w-6 h-6 mb-2 text-[#ec028b]" />
                                 <span className="text-xs uppercase font-bold tracking-wide">Reports</span>
                             </Button>
                         </div>
@@ -289,10 +831,25 @@ const EmployeeHomepage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- RIGHT COLUMN (Sidebar) --- */}
                 <div className="space-y-6">
                     {/* Session Widget */}
                     <SessionWidget />
+
+                    {/* Admin Insights (Only for Admin/Super Admin) */}
+                    {(currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin') && (
+                        <Card className="bg-[#ec028b]/10 border-[#ec028b]/30 group hover:border-[#ec028b]/60 transition-all cursor-pointer overflow-hidden p-6" onClick={() => setActivePageId('A-01')}>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <ShieldCheckIcon className="w-6 h-6 text-[#ec028b]" />
+                                    <h4 className="font-black text-white uppercase tracking-widest text-sm leading-none">Control Room</h4>
+                                </div>
+                                <ArrowRightIcon className="w-4 h-4 text-[#ec028b] group-hover:translate-x-1 transition-transform" />
+                            </div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider leading-relaxed">
+                                Access organization-wide oversight protocols and system status.
+                            </p>
+                        </Card>
+                    )}
 
                     {/* Agenda */}
                     <Card title="Today's Schedule">
@@ -308,20 +865,19 @@ const EmployeeHomepage: React.FC = () => {
                                 </div>
                             ))}
                         </div>
-                        <Button variant="secondary" size="sm" className="w-full mt-2">View Full Calendar</Button>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            className="w-full mt-2 flex items-center justify-center gap-2"
+                            onClick={() => setActivePageId('E-04')}
+                        >
+                            <CalendarDaysIcon className="w-4 h-4" />
+                            View Full Calendar
+                        </Button>
                     </Card>
 
-                    {/* Pinned/Weather Widget */}
-                    <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-4 flex items-center justify-between backdrop-blur-sm">
-                        <div className="flex items-center">
-                            <BoltIcon className="w-8 h-8 text-gray-500 mr-3" />
-                            <div>
-                                <p className="text-sm font-bold text-white">Storm Alert</p>
-                                <p className="text-xs text-gray-400">Hail expected in Denver Area</p>
-                            </div>
-                        </div>
-                        <span className="text-xs bg-black border border-gray-600 text-gray-300 px-2 py-1 rounded">View</span>
-                    </div>
+                    {/* Pinned/Weather Widget (Dynamic) */}
+                    <StormAlertWidget />
                 </div>
             </div>
         </PageContainer>
