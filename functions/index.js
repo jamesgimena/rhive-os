@@ -84,24 +84,37 @@ exports.justCallLookup = functions.https.onRequest((req, res) => {
 
             // 2. Search Projects (Check both 'project' and 'projects' as per user notes)
             let projectData = null;
-            if (customerData && customerData.project_id) {
-                const pDoc = await db.collection('project').doc(customerData.project_id).get();
+            let projectId = customerData ? customerData.project_id : null;
+            if (projectId) {
+                const pDoc = await db.collection('project').doc(projectId).get();
                 if (pDoc.exists) projectData = pDoc.data();
                 else {
-                    const pDoc2 = await db.collection('projects').doc(customerData.project_id).get();
+                    const pDoc2 = await db.collection('projects').doc(projectId).get();
                     if (pDoc2.exists) projectData = pDoc2.data();
                 }
+            }
+
+            // 2.5. Identify Property
+            let propertyData = null;
+            let propertyId = projectData ? projectData.property_id : null;
+            if (propertyId) {
+                const propDoc = await db.collection('properties').doc(propertyId).get();
+                if (propDoc.exists) propertyData = propDoc.data();
+            } else if (projectData && projectData.property) {
+                propertyData = projectData.property; // nested property object
             }
 
             // 3. Prepare context for Gemini
             const customerName = customerData ? `${customerData.first_name} ${customerData.last_name}` : "Unknown (New Lead)";
             const customerStatus = projectData ? projectData.status : (customerData ? customerData.status : "New");
             const lastProject = projectData ? (projectData.name || "Untitled Project") : (customerData ? (customerData.last_project || "None") : "None");
+            const propertyAddress = propertyData ? (propertyData.address || propertyData.property_address || "Unknown Property") : "None";
 
             const prompt = `You are the AI Voice Agent for RHIVE Construction. 
             Customer: ${customerName}, 
             Status: ${customerStatus}, 
-            Current Project: ${lastProject}. 
+            Current Project: ${lastProject},
+            Property Address: ${propertyAddress}. 
             Generate a brief (max 15 words) personalized greeting. 
             Format: Just the text.`;
 
@@ -109,7 +122,7 @@ exports.justCallLookup = functions.https.onRequest((req, res) => {
             if (GEMINI_API_KEY && genAI) {
                 try {
                     const result = await genAI.models.generateContent({
-                        model: "gemini-1.5-flash",
+                        model: "gemini-2.5-flash",
                         contents: [{ parts: [{ text: prompt }] }]
                     });
 
@@ -119,6 +132,8 @@ exports.justCallLookup = functions.https.onRequest((req, res) => {
                 } catch (e) { console.error("Gemini Error", e); }
             }
 
+            const accountId = customerData ? customerData.account_id : (projectData ? projectData.account_id : null);
+
             return res.status(200).json({
                 found: !!customerData,
                 firstName: customerData ? customerData.first_name : "Guest",
@@ -126,7 +141,13 @@ exports.justCallLookup = functions.https.onRequest((req, res) => {
                 personalizedGreeting,
                 status: customerStatus,
                 lastProject,
-                projectId: customerData ? customerData.project_id : null
+                
+                // Identity Variables for the AI Call Bot
+                contactId: contactId,
+                accountId: accountId,
+                projectId: projectId,
+                propertyId: propertyId,
+                propertyAddress: propertyAddress !== "None" ? propertyAddress : null
             });
         } catch (error) {
             console.error("JustCall Lookup Error:", error);
@@ -187,12 +208,38 @@ exports.justCallInformation = functions.https.onRequest((req, res) => {
                 }
             }
 
+            // 3.5 Fetch Recent Call History
+            let recentCalls = [];
+            try {
+                const callLogsSnapshot = await db.collection('call_logs')
+                    .where('contact_number', 'in', variations)
+                    .get();
+                    
+                if (!callLogsSnapshot.empty) {
+                    recentCalls = callLogsSnapshot.docs
+                        .map(doc => doc.data())
+                        .sort((a, b) => {
+                            const timeA = a.timestamp && a.timestamp.toMillis ? a.timestamp.toMillis() : 0;
+                            const timeB = b.timestamp && b.timestamp.toMillis ? b.timestamp.toMillis() : 0;
+                            return timeB - timeA;
+                        })
+                        .slice(0, 3); // Get 3 most recent calls
+                }
+            } catch (err) {
+                console.error("Error fetching recent calls:", err);
+            }
+
+            const callsSummary = recentCalls.length > 0 
+                ? recentCalls.map(c => `Date: ${c.call_date || 'Unknown Date'} (Duration: ${c.duration || 0}s)`).join(' | ')
+                : 'None';
+
             // 4. Summarize for AI Bot
             const contextSummary = `
                 Customer: ${contact.first_name} ${contact.last_name}
                 Email: ${contact.email || 'N/A'}
                 Projects: ${projects.map(p => `${p.name} (Status: ${p.status || 'Unknown'})`).join(', ') || 'None'}
                 Properties: ${propertiesList.map(p => p.address || p.property_address || 'Unknown').join(', ') || 'None'}
+                Recent Call History: ${callsSummary}
             `.trim();
 
             return res.status(200).json({
@@ -200,6 +247,7 @@ exports.justCallInformation = functions.https.onRequest((req, res) => {
                 contact,
                 projects,
                 properties: propertiesList,
+                recentCalls,
                 contextSummary
             });
         } catch (error) {
@@ -334,11 +382,21 @@ exports.justCallWebhook = functions.https.onRequest((req, res) => {
                     transcript: d.transcript || '',
                     // Metadata
                     justcall_request_id: body.request_id || null,
-                    timestamp: admin.firestore.FieldValue.serverTimestamp()
+                    updated_at: admin.firestore.FieldValue.serverTimestamp()
                 };
-                await db.collection('call_logs').add(callData);
-                console.log(`Call event '${eventType}' logged to Firestore.`);
-                return res.status(200).json({ success: true, message: 'Call logged.' });
+                
+                // Keep the original timestamp if merging, or set it if new
+                if (d.id) {
+                    await db.collection('call_logs').doc(String(d.id)).set({
+                        ...callData,
+                        timestamp: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                } else {
+                    callData.timestamp = admin.firestore.FieldValue.serverTimestamp();
+                    await db.collection('call_logs').add(callData);
+                }
+                console.log(`Call event '${eventType}' logged/updated to Firestore.`);
+                return res.status(200).json({ success: true, message: 'Call logged/updated.' });
             }
 
             // --- Handle SMS Events ---
@@ -353,11 +411,21 @@ exports.justCallWebhook = functions.https.onRequest((req, res) => {
                     agent_name: d.agent_name || null,
                     sms_id: d.id || null,
                     justcall_request_id: body.request_id || null,
-                    timestamp: admin.firestore.FieldValue.serverTimestamp()
+                    updated_at: admin.firestore.FieldValue.serverTimestamp()
                 };
-                await db.collection('sms_logs').add(smsData);
-                console.log(`SMS event '${eventType}' logged to Firestore.`);
-                return res.status(200).json({ success: true, message: 'SMS logged.' });
+                
+                const docId = d.id || smsData.sms_id;
+                if (docId) {
+                    await db.collection('sms_logs').doc(String(docId)).set({
+                        ...smsData,
+                        timestamp: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                } else {
+                    smsData.timestamp = admin.firestore.FieldValue.serverTimestamp();
+                    await db.collection('sms_logs').add(smsData);
+                }
+                console.log(`SMS event '${eventType}' logged/updated to Firestore.`);
+                return res.status(200).json({ success: true, message: 'SMS logged/updated.' });
             }
 
             // --- Unknown event: acknowledge receipt ---
@@ -371,3 +439,232 @@ exports.justCallWebhook = functions.https.onRequest((req, res) => {
     });
 });
 
+/**
+ * 4. Download JustCall Recording to Firebase Storage
+ * Listens to new call logs. If a recording_url is present, it downloads the audio
+ * and uploads it to Firebase Storage for permanent keeping.
+ */
+exports.saveCallRecordingToStorage = functions.firestore
+    .document('call_logs/{logId}')
+    .onWrite(async (change, context) => {
+        // If the document was deleted, do nothing
+        if (!change.after.exists) {
+            return null;
+        }
+
+        const data = change.after.data();
+        const previousData = change.before.exists ? change.before.data() : {};
+        
+        // Only run if there's a recording URL and we haven't processed this exact URL yet
+        if (!data.recording_url || data.storage_recording_url || data.recording_url === previousData.recording_url) {
+            return null;
+        }
+
+        const logId = context.params.logId;
+        const bucket = admin.storage().bucket();
+        
+        try {
+            console.log(`Downloading recording for call log ${logId}...`);
+            
+            const response = await axios({
+                method: 'GET',
+                url: data.recording_url,
+                responseType: 'stream'
+            });
+
+            // Try to extract the file extension from URL
+            let extension = 'mp3';
+            try {
+                const urlParts = new URL(data.recording_url);
+                const pathExt = urlParts.pathname.split('.').pop();
+                if (pathExt && pathExt.length <= 4) extension = pathExt;
+            } catch (e) { /* ignore url parsing error */ }
+
+            const filePath = `call_recordings/${logId}.${extension}`;
+            const file = bucket.file(filePath);
+
+            const writeStream = file.createWriteStream({
+                metadata: { contentType: response.headers['content-type'] || 'audio/mpeg' }
+            });
+
+            await new Promise((resolve, reject) => {
+                response.data.pipe(writeStream)
+                .on('error', reject)
+                .on('finish', resolve);
+            });
+
+            // Generate standard Firebase Storage media URL
+            const storageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}?alt=media`;
+            
+            // Update the firestore document with the new permanent reference
+            await change.after.ref.update({
+                storage_recording_url: storageUrl,
+                storage_path: filePath
+            });
+            
+            console.log(`Successfully saved recording to Storage: ${storageUrl}`);
+            return null;
+        } catch (error) {
+            console.error(`Error saving recording for ${logId}:`, error);
+            return null;
+        }
+    });
+
+/**
+ * 5. Process Call Logs for New Leads
+ * Triggered on write to call_logs. Checks if caller is new (not in 'contacts').
+ * If new and call is completed, uses Gemini (if available) to parse the transcript
+ * and creates a new Property, Lead, and Contact.
+ */
+exports.processCallLogForLead = functions.firestore
+    .document('call_logs/{logId}')
+    .onWrite(async (change, context) => {
+        if (!change.after.exists) return null;
+
+        const data = change.after.data();
+        
+        // Only trigger on call.completed and if we haven't processed it
+        if (data.event_type !== 'call.completed' || data.lead_processed) {
+            return null;
+        }
+
+        const phone = data.contact_number;
+        if (!phone) return null;
+
+        const db = admin.firestore();
+
+        try {
+            // 1. Check if contact already exists
+            const variations = getPhoneVariations(phone);
+            const contactSnap = await db.collection('contacts').where('phone', 'in', variations).limit(1).get();
+            if (!contactSnap.empty) {
+                // Not a new lead, mark as processed
+                await change.after.ref.update({ lead_processed: true });
+                return null;
+            }
+
+            console.log(`New caller detected: ${phone}. Extracting lead info...`);
+
+            // 2. Default Extraction Data
+            let extracted = {
+                firstName: data.contact_name ? data.contact_name.split(' ')[0] : 'Unknown',
+                lastName: data.contact_name && data.contact_name.includes(' ') ? data.contact_name.split(' ').slice(1).join(' ') : 'Caller',
+                email: data.contact_email || '',
+                address: 'Unknown Address',
+                city: '',
+                state: '',
+                zip: '',
+                projectType: 'General Inquiry',
+                details: data.transcript ? data.transcript.substring(0, 500) : 'Left no transcript.'
+            };
+
+            const transcript = data.transcript || '';
+
+            // 3. AI Extraction
+            if (GEMINI_API_KEY && genAI && transcript.length > 20) {
+                const prompt = `You are a helpful assistant for RHIVE Construction extracting lead data from a call transcript.
+Transcript:
+"${transcript}"
+
+Extract the following information as a flat JSON object (strictly raw JSON, no markdown formatting):
+{
+  "firstName": "Client's first name, or 'Unknown'",
+  "lastName": "Client's last name, or 'Caller'",
+  "email": "Email if mentioned, or empty string",
+  "address": "Street address if mentioned, or 'Unknown'",
+  "city": "City if mentioned, or empty string",
+  "state": "State if mentioned, or empty string",
+  "zip": "Zip code if mentioned, or empty string",
+  "projectType": "Type of project (e.g. Roof Replacement, Remodel, General Inquiry)",
+  "details": "A brief 2 sentence summary of what they requested"
+}`;
+                try {
+                    const result = await genAI.models.generateContent({
+                        model: "gemini-2.5-flash",
+                        contents: [{ parts: [{ text: prompt }] }]
+                    });
+                    
+                    if (result && result.candidates && result.candidates[0]) {
+                        const responseText = result.candidates[0].content.parts[0].text;
+                        
+                        // Robust JSON extraction
+                        let jsonString = responseText;
+                        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            jsonString = jsonMatch[0];
+                        }
+
+                        try {
+                            const aiData = JSON.parse(jsonString);
+                            // Merge
+                            extracted.firstName = aiData.firstName !== 'Unknown' && aiData.firstName ? aiData.firstName : extracted.firstName;
+                            extracted.lastName = aiData.lastName !== 'Caller' && aiData.lastName ? aiData.lastName : extracted.lastName;
+                            extracted.email = aiData.email || extracted.email;
+                            extracted.address = aiData.address && aiData.address !== 'Unknown' ? aiData.address : extracted.address;
+                            extracted.city = aiData.city || extracted.city;
+                            extracted.state = aiData.state || extracted.state;
+                            extracted.zip = aiData.zip || extracted.zip;
+                            extracted.projectType = aiData.projectType || extracted.projectType;
+                            extracted.details = aiData.details || extracted.details;
+                        } catch (parseError) {
+                            console.error("Could not parse Gemini JSON response:", responseText);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Gemini Extraction Error:", e.message);
+                }
+            }
+
+            // 4. Create Property
+            const propertyRef = await db.collection('properties').add({
+                address_full: `${extracted.address} ${extracted.city} ${extracted.state} ${extracted.zip}`.trim(),
+                property_address: extracted.address,
+                city: extracted.city,
+                state: extracted.state,
+                zip: extracted.zip,
+                type: extracted.projectType,
+                created_at: admin.firestore.FieldValue.serverTimestamp(),
+                updated_at: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            // 5. Create Lead
+            const leadRef = await db.collection('leads').add({
+                name: `${extracted.firstName} ${extracted.lastName}`,
+                project_type: extracted.projectType,
+                status: 'Active',
+                current_stage: 'Lead',
+                details: extracted.details,
+                property_id: propertyRef.id,
+                property_address: extracted.address,
+                created_at: admin.firestore.FieldValue.serverTimestamp(),
+                updated_at: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            // 6. Create Contact
+            await db.collection('contacts').add({
+                first_name: extracted.firstName,
+                last_name: extracted.lastName,
+                phone: phone,
+                email: extracted.email,
+                project_id: leadRef.id,
+                property_id: propertyRef.id,
+                role: 'Client',
+                is_primary: true,
+                created_at: admin.firestore.FieldValue.serverTimestamp(),
+                updated_at: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            // 7. Mark as processed
+            await change.after.ref.update({ 
+                lead_processed: true,
+                lead_id: leadRef.id
+            });
+
+            console.log(`Successfully auto-created Lead (${leadRef.id}) for new caller: ${phone}.`);
+            return null;
+
+        } catch (error) {
+            console.error("Error generating lead from call log:", error);
+            return null;
+        }
+    });
