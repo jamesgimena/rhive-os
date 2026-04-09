@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { projectService, firestoreService } from '../lib/firebaseService';
 import { cn, getStagePageId } from '../lib/utils';
-import { ArrowLeftIcon, MapPinIcon, BriefcaseIcon, ArrowRightIcon, CheckCircleIcon } from './icons';
+import { ArrowLeftIcon, MapPinIcon, BriefcaseIcon, ArrowRightIcon, CheckCircleIcon, CalendarIcon } from './icons';
 import Button from './Button';
+import FollowUpModal from './FollowUpModal';
 
 interface ProjectStageLayoutProps {
     stageLabel: string;
@@ -74,6 +75,7 @@ export const ProjectStageLayout: React.FC<ProjectStageLayoutProps> = ({
     const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [advancing, setAdvancing] = useState(false);
+    const [showFollowUp, setShowFollowUp] = useState(false);
 
     useEffect(() => {
         const unsub = projectService.subscribe((data: any[]) => {
@@ -207,6 +209,16 @@ export const ProjectStageLayout: React.FC<ProjectStageLayoutProps> = ({
                     <div className="flex items-center gap-3 flex-none">
                         {headerActions?.(project)}
 
+                        {/* ── Schedule Follow-Up button ── */}
+                        <button
+                            onClick={() => setShowFollowUp(true)}
+                            className="group flex items-center gap-2 px-3 py-2 bg-purple-500/10 border border-purple-500/30 rounded-xl text-purple-400 font-black text-xs uppercase tracking-wider hover:bg-purple-500/20 hover:border-purple-500/60 hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] transition-all duration-300"
+                            title="Schedule a follow-up call or visit"
+                        >
+                            <CalendarIcon className="w-3.5 h-3.5" />
+                            Follow-Up
+                        </button>
+
                         {/* ── Advance stage button ── */}
                         {isCompleted ? (
                             <div className="flex items-center gap-2 text-emerald-400 px-4 py-2 border border-emerald-500/30 bg-emerald-500/10 rounded-xl text-xs font-black uppercase tracking-widest">
@@ -267,6 +279,14 @@ export const ProjectStageLayout: React.FC<ProjectStageLayoutProps> = ({
                 <div className="flex-1 overflow-y-auto">
                     {children(project)}
                 </div>
+
+                {/* ── Follow-Up Modal ── */}
+                {showFollowUp && (
+                    <FollowUpModal
+                        project={project}
+                        onClose={() => setShowFollowUp(false)}
+                    />
+                )}
             </div>
         );
     }

@@ -4,6 +4,7 @@ import { useNavigation } from '../contexts/NavigationContext';
 import PageContainer from '../components/PageContainer';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import FollowUpModal from '../components/FollowUpModal';
 import { 
     BriefcaseIcon, 
     UserIcon, 
@@ -13,7 +14,8 @@ import {
     DocumentTextIcon,
     CalculatorIcon,
     CheckCircleIcon,
-    XIcon
+    XIcon,
+    CalendarIcon
 } from '../components/icons';
 import { projectService, firestoreService } from '../lib/firebaseService';
 import { cn, getStagePageId } from '../lib/utils';
@@ -174,6 +176,7 @@ const LeadPage: React.FC = () => {
     // If no project is selected, show the master List of Leads.
     const [mode, setMode] = useState<'list' | 'detail'>(selectedProjectId ? 'detail' : 'list');
     const [showConvertModal, setShowConvertModal] = useState(false);
+    const [showFollowUp, setShowFollowUp] = useState(false);
     
     const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -443,6 +446,15 @@ const LeadPage: React.FC = () => {
                                         <UserIcon className="w-5 h-5 mr-2" />
                                         View Account
                                     </Button>
+
+                                    {/* ── Schedule Follow-Up ── */}
+                                    <button
+                                        onClick={() => setShowFollowUp(true)}
+                                        className="group relative w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-500/10 border border-purple-500/30 rounded-xl text-purple-400 font-black text-sm uppercase tracking-wider hover:bg-purple-500/20 hover:border-purple-500/60 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)] transition-all duration-300 overflow-hidden"
+                                    >
+                                        <CalendarIcon className="w-4 h-4" />
+                                        Schedule Follow-Up
+                                    </button>
                                 </div>
                             </Card>
                         </div>
@@ -455,6 +467,14 @@ const LeadPage: React.FC = () => {
                         project={currentProject}
                         onClose={() => setShowConvertModal(false)}
                         onConvert={handleConvertLead}
+                    />
+                )}
+
+                {/* Follow-Up Modal */}
+                {showFollowUp && currentProject && (
+                    <FollowUpModal
+                        project={currentProject}
+                        onClose={() => setShowFollowUp(false)}
                     />
                 )}
             </PageContainer>
