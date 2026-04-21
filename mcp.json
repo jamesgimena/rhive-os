@@ -1,0 +1,15 @@
+{
+    "mcpServers": {
+        "firebase": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-firebase"
+            ],
+            "env": {
+                "GOOGLE_APPLICATION_CREDENTIALS": "./firebase-service-account.json",
+                "FIREBASE_STORAGE_BUCKET": "rhive-os.firebasestorage.app"
+            }
+        }
+    }
+}

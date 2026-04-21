@@ -10,7 +10,12 @@ import AboutUsPage from './pages/AboutUsPage'; // P-01
 import OurServicesPage from './pages/OurServicesPage'; // P-02
 import AsphaltRoofingPage from './pages/AsphaltRoofingPage'; // P-02a
 import MembraneRoofingPage from './pages/MembraneRoofingPage'; // P-02b
-import RoofUpgradesPage from './pages/RoofUpgradesPage'; // P-02c / P-02d
+import GuttersPage from './pages/GuttersPage'; // P-02c
+import IceManagementPage from './pages/IceManagementPage'; // P-02d
+import RoofComponentsPage from './pages/RoofComponentsPage'; // P-02e
+import Tpo60Page from './pages/Tpo60Page'; // P-02b-1
+import Tpo80Page from './pages/Tpo80Page'; // P-02b-2
+import PvcPage from './pages/PvcPage'; // P-02b-3
 import DurationPerformancePage from './pages/DurationPerformancePage'; // P-02a-1
 import DurationFlexPage from './pages/DurationFlexPage'; // P-02a-2
 import DesignerPackagePage from './pages/DesignerPackagePage'; // P-02a-3
@@ -39,8 +44,10 @@ import LineItemCatalogPage from './pages/LineItemCatalogPage'; // A-05 / E-19
 import LineItemProfilePage from './pages/LineItemProfilePage'; // A-06 / E-20
 import ContactsVendorsPage from './pages/ContactsVendorsPage'; // E-24
 import ContactVendorProfilePage from './pages/ContactVendorProfilePage'; // E-25
-import CompanyPage from './pages/CompanyPage'; // E-12 (Property Profile)
-import PropertyPage from './pages/PropertyPage'; // E-12
+import CompanyPage from './pages/CompanyPage'; // E-08 (Company Profile)
+import PropertyPage from './pages/PropertyPage'; // E-11 (List)
+import PropertyProfilePage from './pages/PropertyProfilePage'; // E-12 (Details)
+import ProjectProfilePage from './pages/ProjectProfilePage'; // E-15 (Project Profile)
 import WeatherGuideWidgetPage from './pages/WeatherGuideWidgetPage'; // E-38
 import CustomerProjectMapPage from './pages/CustomerProjectMapPage'; // E-06
 import CustomerHomepage from './pages/CustomerHomepage'; // C-01
@@ -52,10 +59,15 @@ import ContractorFinancialsPage from './pages/ContractorFinancialsPage'; // CO-0
 import NewProjectBidsPage from './pages/NewProjectBidsPage'; // CO-05
 import SupplierHomepage from './pages/SupplierHomepage'; // S-01
 import SupplierProfilePage from './pages/SupplierProfilePage'; // S-04
+import UserManagementPage from './pages/UserManagementPage'; // A-02
+import AdminDashboardPage from './pages/AdminDashboardPage'; // A-01
+import RoleManagementPage from './pages/RoleManagementPage'; // SA-01
 import CustomerTrackerPage from './pages/CustomerTrackerPage'; // C-Tracker
 import SimulationGuidePage from './pages/SimulationGuidePage'; // (Simulation)
+import ChatbotTestingPage from './pages/ChatbotTestingPage'; // E-TEST
 import RHIVEBrandingPage from './pages/RHIVEBrandingPage'; // E-39
 import InsurancePage from './pages/InsurancePage'; // P-13
+import PreConversionRecordPage from './pages/PreConversionRecordPage'; // (Simulation)
 
 // Specific stage pages
 import LeadPage from './pages/LeadPage'; // E-26
@@ -91,9 +103,12 @@ export const pageComponentMap: Record<string, React.FC> = {
   'P-02a-4': PremiumDesignerPackagePage,
   'P-02a-SPEC': DurationSpecificationPrint,
   'P-02b': MembraneRoofingPage,
-  'P-02c': RoofUpgradesPage,
-  'P-02d': RoofUpgradesPage,
-  'P-02e': () => <Placeholder name="Additional Trades" />,
+  'P-02b-1': Tpo60Page,
+  'P-02b-2': Tpo80Page,
+  'P-02b-3': PvcPage,
+  'P-02c': GuttersPage,
+  'P-02d': IceManagementPage,
+  'P-02e': RoofComponentsPage,
   'P-03': OurProcessPage,
   'P-05': ContactPage,
   'P-06': LoginPage,
@@ -106,8 +121,8 @@ export const pageComponentMap: Record<string, React.FC> = {
   'P-13': InsurancePage,
 
   // Admin (Employee World Section 1)
-  'A-01': () => <Placeholder name="Admin Admin Dashboard" />,
-  'A-02': () => <Placeholder name="Admin User Management" />,
+  'A-01': AdminDashboardPage,
+  'A-02': UserManagementPage,
   'A-03': EstimatePricingPage,
   'A-04': EstimateBackendApiPage,
   'A-05': LineItemCatalogPage,
@@ -117,6 +132,7 @@ export const pageComponentMap: Record<string, React.FC> = {
   'E-01': EmployeeHomepage,
   'E-02': GlobalNavCustomerLookup,
   'E-02a': CustomerInputPage,
+  'E-TEMP': PreConversionRecordPage,
   'E-03': () => <Placeholder name="AI ASSISTANT (GLOBAL)" />,
   'E-04': EmployeeTimeoffPage,
   'E-05': EmployeePipelinePage,
@@ -125,10 +141,10 @@ export const pageComponentMap: Record<string, React.FC> = {
   'E-08': CompanyPage,
   'E-09': () => <Placeholder name="MY CONTACTS (CRM)" />,
   'E-10': ContactVendorProfilePage,
-  'E-11': () => <Placeholder name="MY PROPERTIES (CRM)" />,
-  'E-12': PropertyPage,
+  'E-11': PropertyPage,
+  'E-12': PropertyProfilePage,
   'E-14': () => <Placeholder name="PROJECT HUB" />,
-  'E-15': () => <Placeholder name="PROJECT PROFILE" />,
+  'E-15': ProjectProfilePage,
   'E-16': IncomeActionatorPage,
   'E-17': () => <Placeholder name="COMMISSION COMPASS" />,
   'E-18': ReportingPage,
@@ -180,4 +196,7 @@ export const pageComponentMap: Record<string, React.FC> = {
 
   // Simulation
   'E-SIM-GUIDE': SimulationGuidePage,
+  'E-TEST': ChatbotTestingPage,
+  'SA-01': RoleManagementPage,
+  'SA-02': () => <Placeholder name="Global Settings" />,
 };

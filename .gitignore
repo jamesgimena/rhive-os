@@ -14,6 +14,8 @@ dist-ssr
 *.local
 .env
 .env.*
+config/*.json
+scripts/drive-automation/service-account.json
 
 # Large Media
 *.m4a
@@ -26,6 +28,12 @@ dist-ssr
 
 # REFERENCES (TOGGLE: Comment out to allow AI indexing; Un-comment to protect during push)
 REFERENCES/
+
+# Environment variables
+.env
+
+# Firebase credentials
+firebase-service-account.json
 
 # Editor directories and files
 .vscode/*

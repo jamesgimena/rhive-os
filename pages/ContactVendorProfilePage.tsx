@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PageContainer from '../components/PageContainer';
 import Card from '../components/Card';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -7,43 +6,75 @@ import StatusBadge from '../components/StatusBadge';
 import Button from '../components/Button';
 import { DocumentTextIcon, ArrowPathIcon, ShareIcon } from '../components/icons';
 import { PAGE_GROUPS } from '../constants';
+import { useNavigation } from '../contexts/NavigationContext';
+import { firestoreService } from '../lib/firebaseService';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { MapPinIcon } from '../components/icons';
+import ContactsListPage from './ContactsListPage';
+
+const MAPS_API_KEY = 'AIzaSyAyDim_1uOJy6rS_GZ-EwNKmJyCrvSvqRA';
 
 const ContactVendorProfilePage: React.FC = () => {
     const page = PAGE_GROUPS.flatMap(g => g.pages).find(p => p.id === 'E-10');
-    
+    const { selectedContactId } = useNavigation();
+
+    const [contactData, setContactData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!selectedContactId) {
+            setLoading(false);
+            return;
+        }
+
+        const docRef = doc(db, 'contacts', selectedContactId);
+        const unsub = onSnapshot(docRef, (snap) => {
+            if (snap.exists()) {
+                setContactData({ id: snap.id, ...snap.data() });
+            } else {
+                setContactData(null);
+            }
+            setLoading(false);
+        });
+
+        return () => unsub();
+    }, [selectedContactId]);
+
     const contractor = {
-        name: 'Quality & Roofing',
-        type: 'Contractor',
-        address: '456 Contractor Ave, Salt Lake City, UT 84101',
-        phone: '801-555-7890',
-        email: 'contact@qualityroofing.com',
-        contacts: [
-            { name: 'John Doe', title: 'Owner', phone: '801-555-7891', email: 'john.doe@qualityroofing.com' },
-            { name: 'Jane Smith', title: 'Lead Foreman', phone: '801-555-7892', email: 'jane.s@qualityroofing.com' }
-        ],
-        documents: [
-            { name: 'W-9 Form', status: 'on-file' as const },
-            { name: 'License', status: 'on-file' as const },
-            { name: 'Workers Comp', status: 'expired' as const },
-            { name: 'Liability Insurance', status: 'on-file' as const }
-        ],
-        projects: [
-            { name: 'Henderson Residence', address: '123 Maple St, Denver, CO', price: '$12,500', description: 'Full asphalt shingle replacement. Crew was efficient and clean.', galleries: ['Henderson 1', 'Henderson 2', 'Henderson 3'] },
-            { name: 'Galleria Mall Roof', address: '789 Pine Ln, Aurora, CO', price: '$8,400', description: 'Partial repair on the west wing. Good work on matching existing materials.', galleries: ['Galleria 1', 'Galleria 2'] }
-        ]
+        name: contactData ? (contactData.first_name || contactData.last_name ? `${contactData.first_name || ''} ${contactData.last_name || ''}`.trim() : contactData.name || 'Unknown Contact') : 'Unknown Contact',
+        type: contactData?.role || 'Contact',
+        address: contactData?.address || '',
+        phone: contactData?.phone || '',
+        email: contactData?.email || '',
+        contacts: contactData?.contacts || [],
+        documents: contactData?.documents || [],
+        projects: contactData?.projects || []
     };
 
+    const satUrl = contractor.address
+        ? `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(contractor.address)}&zoom=18&size=800x400&maptype=satellite&markers=color:red%7C${encodeURIComponent(contractor.address)}&key=${MAPS_API_KEY}`
+        : null;
+
+    if (!selectedContactId) {
+        return <ContactsListPage />;
+    }
+
+    if (loading) {
+        return (
+            <PageContainer title="Loading Contact Data..." description="Fetching data from Firebase">
+                <div className="flex items-center justify-center py-20">
+                    <div className="w-10 h-10 border-4 border-[#ec028b] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            </PageContainer>
+        );
+    }
+
     return (
-        <PageContainer title={contractor.name} description={contractor.type}>
-             <div className="absolute top-6 right-10">
-                <Button>
-                    <ShareIcon className="w-5 h-5 mr-2" />
-                    Share Pricing Form
-                </Button>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column */}
-                <div className="lg:col-span-1 space-y-8">
+         <PageContainer title={contractor.name} description={contractor.type}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Contact Info Column */}
+                <div className="md:col-span-1 space-y-8">
                     <Card title="Contact Information">
                         <div className="space-y-3 text-gray-300">
                             <div>
@@ -62,18 +93,37 @@ const ContactVendorProfilePage: React.FC = () => {
                     </Card>
                 </div>
 
-                {/* Right Column */}
-                <div className="lg:col-span-2">
-                     <Card title="Key Contacts">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {contractor.contacts.map(contact => (
-                                <div key={contact.name} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                                    <p className="font-bold text-white">{contact.name}</p>
-                                    <p className="text-sm text-gray-400">{contact.title}</p>
-                                    <p className="text-sm text-gray-300 mt-2">{contact.phone}</p>
-                                    <p className="text-sm text-[#ec028b] break-all">{contact.email}</p>
+                {/* Satellite Map Column */}
+                <div className="md:col-span-2">
+                    <Card title="Location">
+                        <div className="relative h-64 bg-gray-900 rounded-lg overflow-hidden border border-gray-800">
+                            {satUrl ? (
+                                <div className="w-full h-full">
+                                    <iframe
+                                        width="100%"
+                                        height="100%"
+                                        style={{ border: 0 }}
+                                        loading="lazy"
+                                        allowFullScreen
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                        src={`https://www.google.com/maps/embed/v1/place?key=${MAPS_API_KEY}&q=${encodeURIComponent(contractor.address)}&maptype=satellite&zoom=15`}
+                                    ></iframe>
+                                    {/* Floating Address Label over Pin */}
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[40px] pointer-events-none z-10">
+                                        <div className="bg-black/90 backdrop-blur-lg border border-[#ec028b] px-3 py-1.5 rounded shadow-[0_0_20px_rgba(236,2,139,0.4)] flex flex-col items-center animate-in fade-in zoom-in duration-500">
+                                            <p className="text-white font-black text-[10px] whitespace-nowrap uppercase tracking-tighter">
+                                                {contractor.address}
+                                            </p>
+                                            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#ec028b]"></div>
+                                        </div>
+                                    </div>
                                 </div>
-                            ))}
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <MapPinIcon className="w-16 h-16 text-gray-700" />
+                                    <p className="absolute text-gray-500 text-sm">No address on file</p>
+                                </div>
+                            )}
                         </div>
                     </Card>
                 </div>

@@ -1,0 +1,14 @@
+{
+  "name": "rhive-drive-automations",
+  "version": "1.0.0",
+  "description": "API Automation for RHIVE Drive Commercial Bids",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "googleapis": "^140.0.0"
+  }
+}

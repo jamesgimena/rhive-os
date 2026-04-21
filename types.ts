@@ -164,15 +164,16 @@ export interface Pricing {
 }
 
 // Types for App Structure
-export type UserType = 'Employee' | 'Customer' | 'Contractor' | 'Supplier' | 'Public';
+export type UserType = 'Admin' | 'Employee' | 'Customer' | 'Contractor' | 'Supplier' | 'Public' | 'Super Admin';
 
 export interface User {
-  id: string;
-  name: string;
-  role: UserType;
-  email?: string;
-  phone?: string;
-  avatarUrl?: string;
+    id: string;
+    name: string;
+    role: UserType;
+    email?: string;
+    phone?: string;
+    avatarUrl?: string;
+    password_hash?: string;
 }
 
 export interface Project {
@@ -206,34 +207,45 @@ export interface Property {
   features: string[];
 }
 
-export type ProjectStage =
-  | 'Lead'
-  | 'Estimate'
-  | 'Quote'
-  | 'Sign & Verify'
-  | 'Schedule'
-  | 'Pre-Installation'
-  | 'Install'
-  | 'Punch List'
-  | 'Invoicing'
-  | 'Completed'
-  | 'Past Customer';
+export type ProjectStage = 
+    | 'Stage 1: LEAD (Intake)'
+    | 'Stage 2: ESTIMATE (Property Data)'
+    | 'Stage 3: QUOTE (Pricing Options)'
+    | 'Stage 4: SIGN & VERIFY (Agreement)'
+    | 'Stage 5: SCHEDULE (Queue)'
+    | 'Stage 6: PRE-INSTALLATION (Prep)'
+    | 'Stage 7: INSTALL (In Progress)'
+    | 'Stage 8: PUNCH LIST (Quality Control)'
+    | 'Stage 9: INVOICING (Balance Due)'
+    | 'Stage 10: COMPLETED (Paid)'
+    | 'Stage 11: PAST CUSTOMER (Referral System)';
 
 export const PROJECT_STAGES_ORDER: ProjectStage[] = [
-  'Lead', 'Estimate', 'Quote', 'Sign & Verify', 'Schedule', 'Pre-Installation', 'Install', 'Punch List', 'Invoicing', 'Completed', 'Past Customer'
+    'Stage 1: LEAD (Intake)',
+    'Stage 2: ESTIMATE (Property Data)',
+    'Stage 3: QUOTE (Pricing Options)',
+    'Stage 4: SIGN & VERIFY (Agreement)',
+    'Stage 5: SCHEDULE (Queue)',
+    'Stage 6: PRE-INSTALLATION (Prep)',
+    'Stage 7: INSTALL (In Progress)',
+    'Stage 8: PUNCH LIST (Quality Control)',
+    'Stage 9: INVOICING (Balance Due)',
+    'Stage 10: COMPLETED (Paid)',
+    'Stage 11: PAST CUSTOMER (Referral System)'
 ];
 
 export interface Page {
-  id: string;
-  name: string;
-  userType: UserType | 'All';
-  description?: string;
-  parentId?: string;
+    id: string;
+    name: string;
+    userType: UserType | 'All';
+    description?: string;
+    category?: string;
 }
 
 export interface PageGroup {
-  userType: UserType | 'All';
-  pages: Page[];
+    userType: UserType | 'All';
+    label?: string;
+    pages: Page[];
 }
 
 // New Types for Estimates

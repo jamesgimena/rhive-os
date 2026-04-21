@@ -17,32 +17,32 @@ const markers: RoofMarker[] = [
         label: "FULL METAL FLASHINGS",
         description: "28 G Steel Flashing along the 'roof to wall' as needed. We handle all local building permits and manufacturer warranty registrations so you don't have to.",
         image: 'https://static.wixstatic.com/media/c5862a_4fae850cf3ac440cbcbba81dbec2b7a6~mv2.jpg',
-        dotPos: { x: 26, y: 62 },
-        labelPos: { x: 8, y: 55 }
+        dotPos: { x: 44, y: 23 },
+        labelPos: { x: 15, y: 23 }
     },
     {
         id: 'pipe-flashings',
         label: "FULL METAL PIPE FLASHINGS",
         description: "All jackets replaced and sealed. RHIVE guarantees a leak-free installation for the lifetime of the roof, exceeding standard contractor warranties.",
         image: 'https://static.wixstatic.com/media/c5862a_63ac038e810a4346987d02d0e171ba79~mv2.jpg',
-        dotPos: { x: 34, y: 58 },
-        labelPos: { x: 15, y: 40 }
+        dotPos: { x: 48, y: 20 },
+        labelPos: { x: 25, y: 8 }
     },
     {
         id: 'pro-armor',
         label: "O.C. PRO ARMOR UNDERLAYMENT",
         description: "A synthetic water-shedding barrier. We strictly adhere to manufacturer guidelines to ensure the full system is protected by your warranty.",
         image: 'https://static.wixstatic.com/media/c5862a_43781d1ec90b48aa844293b849fae05a~mv2.jpeg',
-        dotPos: { x: 42, y: 65 },
-        labelPos: { x: 25, y: 15 }
+        dotPos: { x: 54, y: 34 },
+        labelPos: { x: 75, y: 20 }
     },
     {
         id: 'ice-water',
         label: "O.C. WEATHERLOCK ICE & WATER",
         description: "Vital protection for valleys safely installed under our strict No-Layover policy to ensure structural integrity and maximum lifespan.",
         image: 'https://static.wixstatic.com/media/c5862a_babe9c016a734f31b3be88b8ef2e9ccc~mv2.avif',
-        dotPos: { x: 43, y: 72 },
-        labelPos: { x: 35, y: 25 }
+        dotPos: { x: 54, y: 42 },
+        labelPos: { x: 80, y: 42 }
     },
     {
         id: 'hip-ridge',
@@ -50,15 +50,15 @@ const markers: RoofMarker[] = [
         description: "Extra protection along hips and ridges. Enjoy a fully transparent quoting process with exact cost breakdowns for every material.",
         image: 'https://static.wixstatic.com/media/c5862a_fd58a699e8354cecb37bf96134693fc7~mv2.avif',
         dotPos: { x: 50, y: 41 },
-        labelPos: { x: 42, y: 10 }
+        labelPos: { x: 30, y: 35 }
     },
     {
         id: 'starter-strip',
         label: "O.C. STARTER STRIP+",
         description: "Ensures a perfect seal along the roof's edge. Our precise installation method safeguards against 130 MPH high winds with $2M liability insurance.",
         image: 'https://static.wixstatic.com/media/c5862a_445728697a264bc4a949908dc3f1efb5~mv2.jpg',
-        dotPos: { x: 46, y: 77 },
-        labelPos: { x: 40, y: 52 }
+        dotPos: { x: 50, y: 65 },
+        labelPos: { x: 75, y: 70 }
     },
     {
         id: 'shingles',

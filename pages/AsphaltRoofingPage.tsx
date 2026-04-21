@@ -13,6 +13,7 @@ import UrgencyGridSection from '../components/UrgencyGridSection';
 import ProcessTimelineSection from '../components/ProcessTimelineSection';
 import FinancialInsuranceSection from '../components/FinancialInsuranceSection';
 import TrustAndCertificationsSection from '../components/TrustAndCertificationsSection';
+import CommercialCapExCTA from '../components/CommercialCapExCTA';
 
 const AsphaltRoofingPage = () => {
     const { setActivePageId } = useNavigation();
@@ -24,28 +25,6 @@ const AsphaltRoofingPage = () => {
         element?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const personas = [
-        {
-            icon: <Home className="w-6 h-6" />,
-            title: "Homeowner",
-            benefit: "First-time buyer? We simplify the complexity with transparent 'Dual-Math' cost breakdowns. You'll see exactly what covers your home and treasures vs. what goes into our certified installation overhead."
-        },
-        {
-            icon: <Briefcase className="w-6 h-6" />,
-            title: "Property Manager",
-            benefit: "Scale your maintenance without the stress. We provide full digital documentation for every roof, condition-tracking, and scheduled replacements to ensure zero-downtime for your tenants."
-        },
-        {
-            icon: <HardHat className="w-6 h-6" />,
-            title: "New Construction",
-            benefit: "Beat the standard market. Our certifications allow you to offer 50-year non-prorated protection to your clients, immediately increasing the resale value and marketability of your builds."
-        },
-        {
-            icon: <Users className="w-6 h-6" />,
-            title: "HOA / Multifamily",
-            benefit: "Protect the whole community. We specialize in large-scale system deployments that maintain aesthetic uniformity while delivering the same high-performance standards to every single unit."
-        }
-    ];
 
     const upgradeOptions = [
         {
@@ -57,7 +36,7 @@ const AsphaltRoofingPage = () => {
             image: '/duration_flex_shingle.png',
             features: ['Class 4 Impact Rated', 'SBS Polymer Protection', 'Extreme Weather-Ready'],
             cta: 'Configure Flex',
-            action: () => setFlexOpen(true)
+            action: () => setActivePageId('P-02a-2')
         },
         {
             id: 'woodland',
@@ -68,7 +47,7 @@ const AsphaltRoofingPage = () => {
             image: '/gaf_woodland_shingle.png',
             features: ['Tri-Laminate Depth', 'Hand-Cut Shake Look', 'Designer Status'],
             cta: 'View Woodland Specs',
-            action: () => { } 
+            action: () => setActivePageId('P-02a-3')
         },
         {
             id: 'sequoia',
@@ -79,7 +58,7 @@ const AsphaltRoofingPage = () => {
             image: '/gaf_grand_sequoia.png',
             features: ['Extra-Large Shingle Tabs', 'High-Contrast Look', 'Maximum ROI Finish'],
             cta: 'View Sequoia Specs',
-            action: () => { }
+            action: () => setActivePageId('P-02a-4')
         }
     ];
 
@@ -152,6 +131,25 @@ const AsphaltRoofingPage = () => {
                 <InteractiveOCMascot />
             </section>
 
+            {/* INTERACTIVE ANATOMY SECTION - SYSTEM DIAGNOSTICS */}
+            <section className="py-24 bg-black border-y border-white/5 relative z-10">
+                <div className="absolute inset-0 bg-gradient-to-b from-[var(--rhive-pink)]/5 via-black to-black pointer-events-none"></div>
+                <div className="max-w-[85rem] mx-auto px-6 mb-12 text-center relative z-20">
+                    <div className="flex items-center justify-center gap-3 mb-4">
+                        <div className="w-8 h-[2px] bg-[var(--rhive-pink)]"></div>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--rhive-pink)] font-bold">System Diagnostics</span>
+                        <div className="w-8 h-[2px] bg-[var(--rhive-pink)]"></div>
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-black text-white uppercase font-display tracking-tight mb-4 text-center">ANATOMY OF PROTECTION<span className="text-[var(--rhive-pink)]">.</span></h2>
+                    <p className="text-gray-400 font-sans max-w-2xl mx-auto text-lg text-center text-balance">
+                        Scan the structure below to see the commercial-grade layering included in every RHIVE installation.
+                    </p>
+                </div>
+                <div className="relative z-20">
+                    <InteractiveRoofAnatomy />
+                </div>
+            </section>
+
             {/* ULTIMATE FOUNDATION SECTION: O.C. DURATION (STANDARD) */}
             <section id="base-foundation" className="py-20 bg-black relative border-y border-white/5">
                 <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
@@ -197,7 +195,7 @@ const AsphaltRoofingPage = () => {
 
                         <div className="flex flex-col sm:flex-row gap-4 mb-12">
                             <button
-                                onClick={() => setDurationOpen(true)}
+                                onClick={() => setActivePageId('P-02a-1')}
                                 className="flex-1 inline-flex items-center justify-center gap-3 px-8 py-5 border border-white/20 bg-white/5 backdrop-blur-md text-white font-black text-[11px] uppercase tracking-[0.3em] hover:bg-white/10 hover:border-[var(--rhive-pink)]/50 transition-all shadow-[0_0_20px_rgba(255,255,255,0.05)]"
                                 style={{ clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' }}
                             >
@@ -300,25 +298,6 @@ const AsphaltRoofingPage = () => {
                 </div>
             </section>
 
-            {/* INTERACTIVE ANATOMY SECTION - MOVED BELOW UPGRADES */}
-            <section className="py-24 bg-black border-y border-white/5 relative z-10">
-                <div className="absolute inset-0 bg-gradient-to-b from-[var(--rhive-pink)]/5 via-black to-black pointer-events-none"></div>
-                <div className="max-w-[85rem] mx-auto px-6 mb-12 text-center relative z-20">
-                    <div className="flex items-center justify-center gap-3 mb-4">
-                        <div className="w-8 h-[2px] bg-[var(--rhive-pink)]"></div>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--rhive-pink)] font-bold">System Diagnostics</span>
-                        <div className="w-8 h-[2px] bg-[var(--rhive-pink)]"></div>
-                    </div>
-                    <h2 className="text-4xl md:text-5xl font-black text-white uppercase font-display tracking-tight mb-4 text-center">ANATOMY OF PROTECTION<span className="text-[var(--rhive-pink)]">.</span></h2>
-                    <p className="text-gray-400 font-sans max-w-2xl mx-auto text-lg text-center text-balance">
-                        Scan the structure below to see the commercial-grade layering included in every RHIVE installation.
-                    </p>
-                </div>
-                <div className="relative z-20">
-                    <InteractiveRoofAnatomy />
-                </div>
-            </section>
-
             {/* 1. NO LAYOVERS MANDATE */}
             <NoLayoversSection />
 
@@ -334,36 +313,8 @@ const AsphaltRoofingPage = () => {
             {/* 5. TRUST & CERTIFICATIONS */}
             <TrustAndCertificationsSection />
 
-            {/* PERSONA BENEFITS SECTION - MOVED BOTTOM */}
-            <section className="py-24 bg-[#050505] relative overflow-hidden border-t border-white/5">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="flex flex-col items-center mb-20 text-center">
-                        <div className="text-[var(--rhive-pink)] text-[10px] font-black uppercase tracking-[0.4em] mb-4">RHIVE Intelligence</div>
-                        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white mb-6">WHY RHIVE <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-600">CONSTRUCTION?</span></h2>
-                        <div className="w-24 h-[1px] bg-[var(--rhive-pink)]" />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 group/grid">
-                        {personas.map((p, i) => (
-                            <div key={i} className="group relative p-8 bg-black/40 backdrop-blur-md border border-white/5 hover:border-[var(--rhive-pink)] hover:-translate-y-2 transition-all duration-500 overflow-hidden cursor-default text-center flex flex-col items-center">
-                                <div className="absolute inset-0 bg-gradient-to-br from-[var(--rhive-pink)]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                <div className="relative z-10 w-full flex flex-col items-center text-center">
-                                    <div className="w-16 h-16 rounded-full bg-black border border-[var(--rhive-pink)]/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[var(--rhive-pink)] transition-all duration-500 shadow-[0_0_15px_rgba(236,2,139,0.2)] group-hover:shadow-[0_0_25px_rgba(236,2,139,0.6)]">
-                                        <div className="text-[var(--rhive-pink)] group-hover:text-white transition-colors duration-500">
-                                            {p.icon}
-                                        </div>
-                                    </div>
-                                    <h3 className="text-lg font-black text-white uppercase tracking-widest mb-4 font-sans">{p.title}</h3>
-                                    <p className="text-gray-400 font-sans text-sm leading-relaxed group-hover:text-gray-100 transition-colors duration-300">
-                                        {p.benefit}
-                                    </p>
-                                </div>
-                                <div className="absolute bottom-0 left-0 h-1 bg-[var(--rhive-pink)] w-0 group-hover:w-full transition-all duration-700 ease-out"></div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+            {/* COMMERCIAL CAPEX CTA */}
+            <CommercialCapExCTA />
 
             {/* QUANTUM ROOF VISUALIZER */}
             <section className="py-24 bg-black relative border-t border-[var(--border-color)]">

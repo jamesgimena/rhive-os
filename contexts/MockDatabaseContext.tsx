@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project, Property, User, ProjectStage, PROJECT_STAGES_ORDER } from '../types';
+import { contactService, userService } from '../lib/firebaseService';
 
 interface MockDatabaseContextType {
     users: User[];
@@ -9,7 +10,7 @@ interface MockDatabaseContextType {
     currentUser: User | null;
     currentProjectId: string | null;
     setCurrentProjectId: (id: string | null) => void;
-    login: (role: string) => void;
+    login: (role: string, password?: string, email?: string) => Promise<any>;
     logout: () => void;
 
     // Actions
@@ -93,13 +94,34 @@ const SEED_PROJECTS: Project[] = [
     }
 ];
 
+
+
 export const MockDatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [users, setUsers] = useState<User[]>(SEED_USERS);
+    const [users, setUsers] = useState<User[]>([]);
     const [properties, setProperties] = useState<Property[]>(SEED_PROPERTIES);
     const [projects, setProjects] = useState<Project[]>(SEED_PROJECTS);
+    const [loading, setLoading] = useState(true);
 
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [currentProjectId, setCurrentProjectId] = useState<string | null>(localStorage.getItem('rhive_project_id'));
+
+    useEffect(() => {
+        const unsub = userService.subscribe((data) => {
+            setUsers(data as User[]);
+            setLoading(false);
+            
+            // Sync current user if role/data changed in DB
+            const saved = localStorage.getItem('rhive_user');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                const updated = (data as User[]).find(u => u.id === parsed.id);
+                if (updated && JSON.stringify(updated) !== saved) {
+                    setCurrentUser(updated);
+                }
+            }
+        });
+        return () => unsub();
+    }, []);
 
     useEffect(() => {
         if (currentUser) localStorage.setItem('rhive_user', JSON.stringify(currentUser));
@@ -111,9 +133,76 @@ export const MockDatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ 
         else localStorage.removeItem('rhive_project_id');
     }, [currentProjectId]);
 
-    const login = (role: string) => {
-        const user = users.find(u => u.role === role) || users[users.length - 1]; // Fallback to Guest
-        setCurrentUser(user);
+    const login = async (role: string, password?: string, email?: string) => {
+        const { hashPassword } = await import('../lib/utils');
+
+        // -------------------------------------------------------
+        // PORTAL LOGIN: Customer, Contractor, Supplier
+        // Authenticated via email + password against contacts/users
+        // -------------------------------------------------------
+        if (role === 'Customer' || role === 'Contractor' || role === 'Supplier') {
+            if (!email || !password) {
+                return { success: false, error: 'Email and password are required.' };
+            }
+
+            const normalizedEmail = email.toLowerCase().trim();
+
+            // 1. Look up by email in the `users` Firestore collection
+            const userResult = await userService.getByEmail(normalizedEmail);
+            if (userResult.success && userResult.data) {
+                const foundUser = userResult.data as User;
+                // Validate role matches
+                if (foundUser.role !== role) {
+                    return { success: false, error: `No ${role} account found with this email.` };
+                }
+                // Validate password hash
+                if (!foundUser.password_hash) {
+                    return { success: false, error: 'This account has no password set. Please contact your administrator.' };
+                }
+                const hashed = await hashPassword(password);
+                if (foundUser.password_hash !== hashed) {
+                    return { success: false, error: 'Invalid email or password.' };
+                }
+                setCurrentUser(foundUser);
+                return { success: true };
+            }
+
+            // 2. Fallback: check the `contacts` collection for email match
+            const contactResult = await contactService.getByEmail(normalizedEmail);
+            if (contactResult.success && contactResult.data) {
+                // Contact exists in DB — but they need a user account to have a password.
+                // Create a synthetic user so they can log in (read-only portal access)
+                // If in the future contacts have passwords added, validate here.
+                return { success: false, error: 'Your email was found in our system, but no portal account exists yet. Please contact your administrator.' };
+            }
+
+            return { success: false, error: 'No account found with this email address.' };
+        }
+
+        // -------------------------------------------------------
+        // INTERNAL LOGIN: Admin, Super Admin, Employee
+        // Authenticated via role selection + password
+        // -------------------------------------------------------
+        const candidates = users.filter(u => u.role === role);
+        if (candidates.length === 0) return { success: false, error: 'Role not found in system.' };
+
+        if (password !== undefined) {
+            const hashed = await hashPassword(password);
+            const validUser = candidates.find(u => u.password_hash === hashed);
+            if (validUser) {
+                setCurrentUser(validUser);
+                return { success: true };
+            }
+            return { success: false, error: 'Invalid security key.' };
+        }
+
+        // Default to first user if no password required (e.g., Public)
+        const user = candidates[0] || users.find(u => u.role === 'Public');
+        if (user) {
+            setCurrentUser(user);
+            return { success: true };
+        }
+        return { success: false, error: 'Login failed.' };
     };
 
     const logout = () => {
@@ -124,15 +213,7 @@ export const MockDatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // --- ACTIONS ---
 
     const addUser = (user: Partial<User>) => {
-        const newUser: User = {
-            id: `U-${Date.now()}`,
-            name: user.name || 'Unknown',
-            role: user.role || 'Customer',
-            email: user.email || '',
-            phone: user.phone || '',
-            avatarUrl: user.avatarUrl
-        };
-        setUsers(prev => [...prev, newUser]);
+        userService.create(user);
     };
 
     const addProperty = (property: Partial<Property>) => {
