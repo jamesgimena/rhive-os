@@ -8,9 +8,24 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.next
 dist
 dist-ssr
 *.local
+.env
+.env.*
+
+# Large Media
+*.m4a
+*.mp4
+*.wav
+*.mp3
+*.mov
+*.zip
+*.tar.gz
+
+# REFERENCES (TOGGLE: Comment out to allow AI indexing; Un-comment to protect during push)
+REFERENCES/
 
 # Environment variables
 .env
@@ -28,3 +43,4 @@ firebase-service-account.json
 *.njsproj
 *.sln
 *.sw?
+

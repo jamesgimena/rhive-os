@@ -102,10 +102,7 @@ export const MockDatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const [projects, setProjects] = useState<Project[]>(SEED_PROJECTS);
     const [loading, setLoading] = useState(true);
 
-    const [currentUser, setCurrentUser] = useState<User | null>(() => {
-        const saved = localStorage.getItem('rhive_user');
-        return saved ? JSON.parse(saved) : null;
-    });
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [currentProjectId, setCurrentProjectId] = useState<string | null>(localStorage.getItem('rhive_project_id'));
 
     useEffect(() => {
