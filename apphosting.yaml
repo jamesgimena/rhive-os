@@ -2,23 +2,51 @@
 # See https://firebase.google.com/docs/app-hosting/configure#cloud-run
 runConfig:
   minInstances: 0
-  # maxInstances: 100
-  # concurrency: 80
-  # cpu: 1
-  # memoryMiB: 512
 
 # Environment variables and secrets.
-# env:
-  # Configure environment variables.
-  # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
-  # - variable: MESSAGE
-  #   value: Hello world!
-  #   availability:
-  #     - BUILD
-  #     - RUNTIME
-
-  # Grant access to secrets in Cloud Secret Manager.
-  # You can create secrets with the CLI command `firebase apphosting:secrets:set <secretName>`.
-  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
-  # - variable: MY_SECRET
-  #   secret: mySecretRef
+env:
+  - variable: VITE_FIREBASE_API_KEY
+    value: AIzaSyBI7Ae41_JcMtHLuAzit3ajoTRHjETtCt8
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_AUTH_DOMAIN
+    value: rhive-os.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_PROJECT_ID
+    value: rhive-os
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_STORAGE_BUCKET
+    value: rhive-os.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_MESSAGING_SENDER_ID
+    value: "672274474306"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_APP_ID
+    value: 1:672274474306:web:226d0a7064e8ae894e14db
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_FIREBASE_MEASUREMENT_ID
+    value: G-T8H6BQPK3H
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_GOOGLE_WEATHER_API_KEY
+    value: AIzaSyCOTpHodVEPLC3G96KwFnX8JF-0DOpgBBI
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: VITE_OPENWEATHER_API_KEY
+    value: 2da7006fc5394b3bbdbfe8171b048768
+    availability:
+      - BUILD
+      - RUNTIME
