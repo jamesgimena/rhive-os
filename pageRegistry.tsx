@@ -10,7 +10,12 @@ import AboutUsPage from './pages/AboutUsPage'; // P-01
 import OurServicesPage from './pages/OurServicesPage'; // P-02
 import AsphaltRoofingPage from './pages/AsphaltRoofingPage'; // P-02a
 import MembraneRoofingPage from './pages/MembraneRoofingPage'; // P-02b
-import RoofUpgradesPage from './pages/RoofUpgradesPage'; // P-02c / P-02d
+import GuttersPage from './pages/GuttersPage'; // P-02c
+import IceManagementPage from './pages/IceManagementPage'; // P-02d
+import RoofComponentsPage from './pages/RoofComponentsPage'; // P-02e
+import Tpo60Page from './pages/Tpo60Page'; // P-02b-1
+import Tpo80Page from './pages/Tpo80Page'; // P-02b-2
+import PvcPage from './pages/PvcPage'; // P-02b-3
 import DurationPerformancePage from './pages/DurationPerformancePage'; // P-02a-1
 import DurationFlexPage from './pages/DurationFlexPage'; // P-02a-2
 import DesignerPackagePage from './pages/DesignerPackagePage'; // P-02a-3
@@ -58,7 +63,10 @@ import UserManagementPage from './pages/UserManagementPage'; // A-02
 import AdminDashboardPage from './pages/AdminDashboardPage'; // A-01
 import RoleManagementPage from './pages/RoleManagementPage'; // SA-01
 import CustomerTrackerPage from './pages/CustomerTrackerPage'; // C-Tracker
-import SimulationGuidePage from './pages/SimulationGuidePage';
+import SimulationGuidePage from './pages/SimulationGuidePage'; // (Simulation)
+import ChatbotTestingPage from './pages/ChatbotTestingPage'; // E-TEST
+import RHIVEBrandingPage from './pages/RHIVEBrandingPage'; // E-39
+import InsurancePage from './pages/InsurancePage'; // P-13
 import PreConversionRecordPage from './pages/PreConversionRecordPage'; // (Simulation)
 import InsurancePage from './pages/InsurancePage'; // P-13
 import RHIVEBrandingPage from './pages/RHIVEBrandingPage'; // E-39
@@ -97,9 +105,12 @@ export const pageComponentMap: Record<string, React.FC> = {
   'P-02a-4': PremiumDesignerPackagePage,
   'P-02a-SPEC': DurationSpecificationPrint,
   'P-02b': MembraneRoofingPage,
-  'P-02c': RoofUpgradesPage,
-  'P-02d': RoofUpgradesPage,
-  'P-02e': () => <Placeholder name="Additional Trades" />,
+  'P-02b-1': Tpo60Page,
+  'P-02b-2': Tpo80Page,
+  'P-02b-3': PvcPage,
+  'P-02c': GuttersPage,
+  'P-02d': IceManagementPage,
+  'P-02e': RoofComponentsPage,
   'P-03': OurProcessPage,
   'P-05': ContactPage,
   'P-06': LoginPage,
@@ -187,6 +198,7 @@ export const pageComponentMap: Record<string, React.FC> = {
 
   // Simulation
   'E-SIM-GUIDE': SimulationGuidePage,
+  'E-TEST': ChatbotTestingPage,
   'SA-01': RoleManagementPage,
   'SA-02': () => <Placeholder name="Global Settings" />,
 };
