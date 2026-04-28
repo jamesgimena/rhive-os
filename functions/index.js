@@ -554,7 +554,8 @@ exports.processCallLogForLead = functions.firestore
                 city: '',
                 state: '',
                 zip: '',
-                projectType: 'General Inquiry',
+                projectType: 'Residential',
+                projectRole: 'Other',
                 details: data.transcript ? data.transcript.substring(0, 500) : 'Left no transcript.'
             };
 
@@ -575,7 +576,8 @@ Extract the following information as a flat JSON object (strictly raw JSON, no m
   "city": "City if mentioned, or empty string",
   "state": "State if mentioned, or empty string",
   "zip": "Zip code if mentioned, or empty string",
-  "projectType": "Type of project (e.g. Roof Replacement, Remodel, General Inquiry)",
+  "projectType": "Must be exactly one of: Residential, Commercial, Government",
+  "projectRole": "Determine caller's role based on projectType. For Residential: Property Owner, Landlord, Tenant, Neighbor, Relative, Other. For Commercial: Property Manager, Building Owner, Maintenance Supervisor, HOA Board Member, Other. For Government: Contract Officer, Site Representative, Facility Manager, Other.",
   "details": "A brief 2 sentence summary of what they requested"
 }`;
                 try {
@@ -605,6 +607,7 @@ Extract the following information as a flat JSON object (strictly raw JSON, no m
                             extracted.state = aiData.state || extracted.state;
                             extracted.zip = aiData.zip || extracted.zip;
                             extracted.projectType = aiData.projectType || extracted.projectType;
+                            extracted.projectRole = aiData.projectRole || extracted.projectRole;
                             extracted.details = aiData.details || extracted.details;
                         } catch (parseError) {
                             console.error("Could not parse Gemini JSON response:", responseText);
@@ -631,6 +634,7 @@ Extract the following information as a flat JSON object (strictly raw JSON, no m
             const leadRef = await db.collection('leads').add({
                 name: `${extracted.firstName} ${extracted.lastName}`,
                 project_type: extracted.projectType,
+                project_role: extracted.projectRole,
                 status: 'Active',
                 current_stage: 'Lead',
                 details: extracted.details,
@@ -646,9 +650,10 @@ Extract the following information as a flat JSON object (strictly raw JSON, no m
                 last_name: extracted.lastName,
                 phone: phone,
                 email: extracted.email,
+                address: extracted.address,
                 project_id: leadRef.id,
                 property_id: propertyRef.id,
-                role: 'Client',
+                role: extracted.projectRole,
                 is_primary: true,
                 created_at: admin.firestore.FieldValue.serverTimestamp(),
                 updated_at: admin.firestore.FieldValue.serverTimestamp()
@@ -668,3 +673,84 @@ Extract the following information as a flat JSON object (strictly raw JSON, no m
             return null;
         }
     });
+
+/**
+ * 6. Proxy for fetching full JustCall Communications (Texts & Calls)
+ * Securely calls JustCall v2.1 API to pull historical contacts without exposing keys to frontend.
+ */
+exports.getJustCallCommunications = functions.https.onRequest((req, res) => {
+    return cors(req, res, async () => {
+        // Handle preflight
+        if (req.method === 'OPTIONS') {
+            res.set('Access-Control-Allow-Origin', '*');
+            res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+            res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            return res.status(204).send('');
+        }
+
+        const phone = req.query.phone || req.body.phone;
+        if (!phone) return res.status(400).json({ error: "No phone number provided" });
+
+        const cleanPhone = String(phone).replace(/\D/g, '');
+        // JustCall often searches by exact number format, trying standard + format
+        const searchPhone = cleanPhone.length === 10 ? `+1${cleanPhone}` : `+${cleanPhone}`;
+
+        if (!JUSTCALL_API_KEY || !JUSTCALL_API_SECRET) {
+            return res.status(500).json({ error: "Missing JustCall API credentials in Cloud Functions environment" });
+        }
+
+        try {
+            // Fetch Texts from JustCall v2.1 API
+            const textsResponse = await axios.get('https://api.justcall.io/v2.1/texts', {
+                params: { contact_number: searchPhone },
+                headers: {
+                    'Authorization': `${JUSTCALL_API_KEY}:${JUSTCALL_API_SECRET}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            // Fetch Calls from JustCall v2.1 API
+            let callsData = [];
+            try {
+                const callsResponse = await axios.get('https://api.justcall.io/v2.1/calls', {
+                    params: { contact_number: searchPhone },
+                    headers: {
+                        'Authorization': `${JUSTCALL_API_KEY}:${JUSTCALL_API_SECRET}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                callsData = callsResponse.data.data || [];
+            } catch (err) {
+                console.error("Error fetching JustCall calls:", err.message);
+                // Non-blocking error for calls if they happen to fail due to some scope reason
+            }
+
+            return res.status(200).json({
+                success: true,
+                texts: textsResponse.data.data || [],
+                calls: callsData
+            });
+
+        } catch (error) {
+            console.error("Error fetching JustCall communications:", error.response?.data || error.message);
+            // Fallback to searching without + prefix if it fails
+            try {
+                 const textsFallback = await axios.get('https://api.justcall.io/v2.1/texts', {
+                    params: { contact_number: cleanPhone },
+                    headers: {
+                        'Authorization': `${JUSTCALL_API_KEY}:${JUSTCALL_API_SECRET}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                return res.status(200).json({
+                    success: true,
+                    texts: textsFallback.data.data || [],
+                    calls: []
+                });
+            } catch (e) {
+                return res.status(500).json({ error: error.message });
+            }
+        }
+    });
+});
+
