@@ -18,6 +18,8 @@ import {
 import { UserType } from '../types';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/button';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface LoginPageProps {
     onLogin: (role: UserType, password?: string, email?: string) => Promise<any>;
@@ -25,7 +27,7 @@ interface LoginPageProps {
 
 // ─── Clipped-corner portal card ──────────────────────────────────────────────
 const PortalButton: React.FC<{
-    role: UserType;
+    role: string;
     icon: React.ReactNode;
     label: string;
     selected: boolean;
@@ -118,6 +120,9 @@ const FloatingInput: React.FC<{
 
 // ─── Main Login Page ──────────────────────────────────────────────────────────
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+    const { theme } = useTheme();
+    const { t } = useLanguage();
+    const isDark = theme === 'dark';
     const mainC = 40;
 
     // View state: 'gateway' | 'portal-login' | 'admin-login'
@@ -186,7 +191,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     />
 
                     <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
-                        <g stroke="#4b5563" strokeWidth="2" className="opacity-80">
+                        <g stroke={isDark ? "#4b5563" : "#D1D5DB"} strokeWidth="1" className="opacity-50 transition-colors">
                             <line x1={`${mainC}px`} y1="0.5px" x2={`calc(100% - ${mainC}px)`} y2="0.5px" />
                             <line x1={`calc(100% - ${mainC}px)`} y1="0.5px" x2="calc(100% - 0.5px)" y2={`${mainC}px`} />
                             <line x1="calc(100% - 0.5px)" y1={`${mainC}px`} x2="calc(100% - 0.5px)" y2={`calc(100% - ${mainC}px)`} />

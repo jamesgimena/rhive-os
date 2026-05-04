@@ -1,0 +1,15 @@
+{
+  "name": "inspector-skill",
+  "version": "1.0.0",
+  "description": "AI Building Inspector via Gemini Multimodal API",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "dotenv": "^16.4.7",
+    "googleapis": "^144.0.0"
+  }
+}
