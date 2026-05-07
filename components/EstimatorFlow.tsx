@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import type { Place, BuildingData, SurveyState } from '../types';
+import { getMapsApiKey } from '../lib/mapsConfig';
 import { LandingPage } from './LandingPage';
 import { Dashboard } from './Dashboard';
 import { generateMockBuildingData } from '../lib/mockData';
@@ -25,7 +26,7 @@ export const EstimatorFlow: React.FC<EstimatorFlowProps> = ({ onClose }) => {
   const [satelliteViewUrl, setSatelliteViewUrl] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  const handlePlaceSelected = useCallback((place: Place) => {
+  const handlePlaceSelected = useCallback(async (place: Place) => {
     setError(null);
     try {
       const data = generateMockBuildingData(place);
