@@ -157,7 +157,7 @@ const OurServicesPage: React.FC = () => {
                 ctaText="Explore Ice Defense"
                 ctaThemeColor="var(--rhive-pink)"
                 align="right"
-                onCtaClick={() => setActivePageId('P-02c')}
+                onCtaClick={() => setActivePageId('P-02d')}
             />
 
             {/* Sub-Footer Message */}

@@ -11,6 +11,7 @@ import { GlobalHeader } from './components/GlobalHeader';
 import { pageComponentMap } from './pageRegistry';
 import { CircuitryBackground } from './components/CircuitryBackground';
 import { FloatingEstimator } from './components/FloatingEstimator';
+import { DevNavigator } from './components/DevNavigator';
 import { cn } from './lib/utils';
 
 const AppContentAuthenticated: React.FC = () => {
@@ -53,17 +54,7 @@ const AppContentAuthenticated: React.FC = () => {
 
     const CurrentPage = pageComponentMap[activePageId] || (() => <div className="p-10 text-gray-400">Select a page from the menu.</div>);
 
-    if (activePageId === 'P-00' || activePageId === 'P-00a') {
-        return (
-            <div className={cn(
-                "fixed inset-0 w-screen h-screen overflow-y-auto font-sans transition-colors duration-500",
-                isDark ? "bg-black text-white" : "bg-white text-black"
-            )}>
-                <CurrentPage />
-                <FloatingEstimator />
-            </div>
-        );
-    }
+    const isPublicRoute = activePageId.startsWith('P-');
 
     return (
         <div className={cn(
@@ -87,6 +78,7 @@ const AppContentAuthenticated: React.FC = () => {
                 </main>
             </div>
             <FloatingEstimator />
+            {window.location.hostname === 'localhost' && <DevNavigator />}
         </div>
     );
 };
