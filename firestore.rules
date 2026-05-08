@@ -2,8 +2,16 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users full read/write access
-    // Allow unauthenticated read access for development
+
+    // ── Users Collection ──────────────────────────────────────────
+    // Read: public (needed for login email lookup before auth is set)
+    // Write: requires authenticated session (admin must be logged in)
+    match /Users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── All Other Collections ─────────────────────────────────────
     match /{document=**} {
       allow read: if true;
       allow write: if request.auth != null;

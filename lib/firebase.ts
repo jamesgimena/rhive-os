@@ -1,4 +1,4 @@
-import { initializeApp, FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAnalytics, Analytics } from "firebase/analytics";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
@@ -16,12 +16,21 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
+// Initialize primary Firebase app
 const app: FirebaseApp = initializeApp(firebaseConfig);
+
+// Initialize a SECONDARY Firebase app exclusively for user creation.
+// This is necessary so that creating a new Firebase Auth account does NOT
+// sign out the currently-logged-in admin on the primary app.
+const SECONDARY_APP_NAME = 'rhive-secondary';
+const appSecondary: FirebaseApp =
+    getApps().find(a => a.name === SECONDARY_APP_NAME) ??
+    initializeApp(firebaseConfig, SECONDARY_APP_NAME);
 
 // Initialize Firebase services
 let analytics: Analytics | null = null;
 let auth: Auth;
+let authSecondary: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
@@ -36,8 +45,9 @@ if (typeof window !== 'undefined') {
 
 // Initialize other services
 auth = getAuth(app);
+authSecondary = getAuth(appSecondary);
 db = getFirestore(app);
 storage = getStorage(app);
 
 // Export initialized services
-export { app, analytics, auth, db, storage };
+export { app, appSecondary, analytics, auth, authSecondary, db, storage };

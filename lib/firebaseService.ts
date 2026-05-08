@@ -1,4 +1,4 @@
-import { auth, db, storage } from './firebase';
+import { auth, db, storage, authSecondary } from './firebase';
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -41,8 +41,20 @@ const mapDoc = (doc: any) => ({ id: doc.id, ...doc.data() });
 // ============================================
 
 export const authService = {
-    signUp: (email: string, password: string) => createUserWithEmailAndPassword(auth, email, password),
-    signIn: (email: string, password: string) => signInWithEmailAndPassword(auth, email, password),
+    /**
+     * Creates a new Firebase Auth user using the SECONDARY app instance.
+     * This prevents the new-user creation from signing out the currently
+     * authenticated admin on the primary app.
+     */
+    signUp: (email: string, password: string): Promise<UserCredential> =>
+        createUserWithEmailAndPassword(authSecondary, email, password),
+
+    /**
+     * Signs in with Firebase Auth on the primary app (for internal users).
+     */
+    signIn: (email: string, password: string): Promise<UserCredential> =>
+        signInWithEmailAndPassword(auth, email, password),
+
     signOut: () => signOut(auth),
     onAuthStateChanged: (callback: (user: User | null) => void) => onAuthStateChanged(auth, callback),
     getCurrentUser: () => auth.currentUser
@@ -415,12 +427,12 @@ export const estimateService = {
 };
 
 export const userService = {
-    getAll: () => firestoreService.getAllDocuments('users'),
-    subscribe: (callback: (data: any[]) => void) => firestoreService.subscribeToDocuments('users', callback),
-    create: (data: any) => firestoreService.addDocument('users', data),
+    getAll: () => firestoreService.getAllDocuments('Users'),
+    subscribe: (callback: (data: any[]) => void) => firestoreService.subscribeToDocuments('Users', callback),
+    create: (data: any) => firestoreService.addDocument('Users', data),
     createWithId: async (id: string, data: any) => {
         try {
-            const docRef = doc(db, 'users', id);
+            const docRef = doc(db, 'Users', id);
             await setDoc(docRef, {
                 ...data,
                 created_at: data.created_at || new Date().toISOString(),
@@ -432,11 +444,11 @@ export const userService = {
             return { success: false, error: error.message };
         }
     },
-    update: (id: string, data: any) => firestoreService.updateDocument('users', id, data),
-    delete: (id: string) => firestoreService.deleteDocument('users', id),
+    update: (id: string, data: any) => firestoreService.updateDocument('Users', id, data),
+    delete: (id: string) => firestoreService.deleteDocument('Users', id),
     getByEmail: async (email: string) => {
         try {
-            const q = query(collection(db, 'users'), where('email', '==', email.toLowerCase().trim()));
+            const q = query(collection(db, 'Users'), where('email', '==', email.toLowerCase().trim()));
             const snapshot = await getDocs(q);
             if (snapshot.empty) return { success: false, error: 'No user found with this email' };
             return { success: true, data: snapshot.docs.map(mapDoc)[0] };

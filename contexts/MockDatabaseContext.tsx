@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Project, Property, User, ProjectStage, PROJECT_STAGES_ORDER } from '../types';
-import { contactService, userService } from '../lib/firebaseService';
+import { contactService, userService, authService } from '../lib/firebaseService';
 
 interface MockDatabaseContextType {
     users: User[];
@@ -171,8 +170,6 @@ export const MockDatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ 
             const contactResult = await contactService.getByEmail(normalizedEmail);
             if (contactResult.success && contactResult.data) {
                 // Contact exists in DB — but they need a user account to have a password.
-                // Create a synthetic user so they can log in (read-only portal access)
-                // If in the future contacts have passwords added, validate here.
                 return { success: false, error: 'Your email was found in our system, but no portal account exists yet. Please contact your administrator.' };
             }
 
@@ -190,46 +187,86 @@ export const MockDatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         // -------------------------------------------------------
         // INTERNAL LOGIN: Admin, Super Admin, Employee
-        // Authenticated via email + password against `users` collection
+        // PRIMARY: Firebase Auth email + password (signInWithEmailAndPassword)
+        // FALLBACK: Hash comparison against Firestore users collection
         // -------------------------------------------------------
-        if (!email) {
-            // Legacy fallback: password-only search across all users of that role
-            const candidates = users.filter(u => u.role === role);
-            if (candidates.length === 0) return { success: false, error: 'Role not found in system.' };
-            if (password !== undefined) {
-                const hashed = await hashPassword(password);
-                const validUser = candidates.find(u => u.password_hash === hashed);
-                if (validUser) { setCurrentUser(validUser); return { success: true }; }
-                return { success: false, error: 'Invalid security key.' };
-            }
-            const user = candidates[0];
-            if (user) { setCurrentUser(user); return { success: true }; }
-            return { success: false, error: 'Login failed.' };
+        if (!email || !password) {
+            return { success: false, error: 'Email and password are required.' };
         }
 
         const normalizedEmail = email.toLowerCase().trim();
-        const userResult = await userService.getByEmail(normalizedEmail);
-        if (!userResult.success || !userResult.data) {
-            return { success: false, error: 'No account found with this email address.' };
+
+        // --- PRIMARY PATH: Firebase Auth ---
+        try {
+            const credential = await authService.signIn(normalizedEmail, password);
+            const uid = credential.user.uid;
+
+            // Fetch the corresponding Firestore user document (keyed by UID)
+            const userResult = await userService.getByEmail(normalizedEmail);
+            if (userResult.success && userResult.data) {
+                const foundUser = userResult.data as User;
+                // Validate that the role matches what was selected on the login screen
+                if (role !== 'Super Admin' && foundUser.role !== role) {
+                    return {
+                        success: false,
+                        error: `This account is registered as '${foundUser.role}', not '${role}'. Please select the correct role.`
+                    };
+                }
+                setCurrentUser(foundUser);
+                return { success: true };
+            }
+
+            // Firebase Auth succeeded but no Firestore doc found yet — create a minimal record
+            const fallbackUser: User = {
+                id: uid,
+                name: credential.user.displayName || normalizedEmail.split('@')[0],
+                role: role as any,
+                email: normalizedEmail,
+            };
+            setCurrentUser(fallbackUser);
+            return { success: true };
+
+        } catch (firebaseErr: any) {
+            // If Firebase Auth fails with 'user-not-found' or 'wrong-password',
+            // fall back to the hash-based lookup in Firestore.
+            const fbCode = firebaseErr?.code || '';
+            const isAuthError =
+                fbCode === 'auth/user-not-found' ||
+                fbCode === 'auth/wrong-password' ||
+                fbCode === 'auth/invalid-credential' ||
+                fbCode === 'auth/invalid-email';
+
+            if (!isAuthError) {
+                // Unexpected error — surface it
+                return { success: false, error: firebaseErr?.message || 'Login failed.' };
+            }
+
+            // --- FALLBACK PATH: Hash-based Firestore lookup ---
+            const userResult = await userService.getByEmail(normalizedEmail);
+            if (!userResult.success || !userResult.data) {
+                return { success: false, error: 'No account found with this email address.' };
+            }
+            const foundUser = userResult.data as User;
+            if (foundUser.role !== role) {
+                return { success: false, error: `No ${role} account found with this email.` };
+            }
+            if (!foundUser.password_hash) {
+                return { success: false, error: 'This account has no password set. Contact your administrator.' };
+            }
+            const hashed = await hashPassword(password);
+            if (foundUser.password_hash !== hashed) {
+                return { success: false, error: 'Invalid email or password.' };
+            }
+            setCurrentUser(foundUser);
+            return { success: true };
         }
-        const foundUser = userResult.data as User;
-        if (foundUser.role !== role) {
-            return { success: false, error: `No ${role} account found with this email.` };
-        }
-        if (!foundUser.password_hash) {
-            return { success: false, error: 'This account has no password set. Contact your administrator.' };
-        }
-        const hashed = await hashPassword(password!);
-        if (foundUser.password_hash !== hashed) {
-            return { success: false, error: 'Invalid email or password.' };
-        }
-        setCurrentUser(foundUser);
-        return { success: true };
     };
 
     const logout = () => {
         setCurrentUser(null);
         setCurrentProjectId(null);
+        // Sign out from Firebase Auth as well
+        authService.signOut().catch(() => {/* ignore if not signed in */});
     };
 
     // --- ACTIONS ---
