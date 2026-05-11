@@ -16,14 +16,13 @@ import {
     PhoneIcon,
     LockIcon
 } from '../components/icons';
-import { userService, authService } from '../lib/firebaseService';
+import { userService } from '../lib/firebaseService';
 import { User, UserType } from '../types';
-import { cn } from '../lib/utils';
+import { cn, hashPassword } from '../lib/utils';
 
 // Internal roles that must register via Firebase Auth
 const INTERNAL_ROLES: UserType[] = ['Admin', 'Super Admin', 'Employee'];
 
-const INTERNAL_ROLES: UserType[] = ['Employee', 'Admin', 'Super Admin'];
 
 const UserManagementPage: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -106,9 +105,17 @@ const UserManagementPage: React.FC = () => {
         setPwSubmitting(true);
         setPwError('');
         try {
-            await userService.update(pwUser.id, { password: newPassword, updated_at: new Date().toISOString() });
-            setPwSuccess(true);
+            const hashed = await hashPassword(newPassword);
+            console.log('[ChangePassword] Updating user ID:', pwUser.id, '| hash preview:', hashed.slice(0, 12) + '...');
+            const result = await userService.update(pwUser.id, { password_hash: hashed, updated_at: new Date().toISOString() });
+            console.log('[ChangePassword] Result:', result);
+            if (result.success) {
+                setPwSuccess(true);
+            } else {
+                setPwError(result.error || 'Firestore update failed. Check console for details.');
+            }
         } catch (err: any) {
+            console.error('[ChangePassword] Error:', err);
             setPwError(err?.message || 'Failed to update password.');
         } finally {
             setPwSubmitting(false);
@@ -120,8 +127,6 @@ const UserManagementPage: React.FC = () => {
         setFormError('');
         setSubmitError('');
         setSubmitting(true);
-
-        const isInternal = INTERNAL_ROLES.includes(formData.role as UserType);
 
         try {
             if (editingUser) {
@@ -138,58 +143,26 @@ const UserManagementPage: React.FC = () => {
                 }
                 await userService.update(editingUser.id, payload);
             } else {
-                // ── CREATE ────────────────────────────────────────────────────
-                if (isInternal) {
-                    // 1. Register in Firebase Auth
-                    if (!formData.email || !formData.password) {
-                        setSubmitError('Email and password are required for internal accounts.');
-                        setSubmitting(false);
-                        return;
-                    }
-                    try {
-                        const credential = await authService.signUp(formData.email.toLowerCase().trim(), formData.password);
-                        const uid = credential.user.uid;
-                        const passwordHash = await hashPassword(formData.password);
-
-                        // 2. Write Firestore doc using Auth UID as document ID
-                        await userService.createWithId(uid, {
-                            name: formData.name,
-                            role: formData.role,
-                            email: formData.email.toLowerCase().trim(),
-                            phone: formData.phone,
-                            password_hash: passwordHash,
-                            auth_uid: uid,
-                            created_at: new Date().toISOString(),
-                        });
-                    } catch (authErr: any) {
-                        const msg = authErr?.code === 'auth/email-already-in-use'
-                            ? 'An account with this email already exists.'
-                            : authErr?.message || 'Failed to create account.';
-                        setSubmitError(msg);
-                        setSubmitting(false);
-                        return;
-                    }
-                } else {
-                    // External roles: just save to Firestore (no Auth)
-                    const passwordHash = formData.password ? await hashPassword(formData.password) : undefined;
-                    await userService.create({
-                        name: formData.name,
-                        role: formData.role,
-                        email: formData.email.toLowerCase().trim(),
-                        phone: formData.phone,
-                        ...(passwordHash ? { password_hash: passwordHash } : {}),
-                        created_at: new Date().toISOString(),
-                    });
+                // ── CREATE: all roles stored in Firestore with password_hash ──
+                if (!formData.email || !formData.password) {
+                    setSubmitError('Email and password are required.');
+                    setSubmitting(false);
+                    return;
                 }
+                const passwordHash = await hashPassword(formData.password);
+                await userService.create({
+                    name: formData.name,
+                    role: formData.role,
+                    email: formData.email.toLowerCase().trim(),
+                    phone: formData.phone,
+                    password_hash: passwordHash,
+                    created_at: new Date().toISOString(),
+                });
             }
 
             setIsModalOpen(false);
         } catch (err: any) {
-            const msg = err?.code === 'auth/email-already-in-use'
-                ? 'That email address is already registered.'
-                : err?.code === 'auth/weak-password'
-                    ? 'Password must be at least 6 characters.'
-                    : err?.message || 'An error occurred. Please try again.';
+            const msg = err?.message || 'An error occurred. Please try again.';
             setFormError(msg);
             setSubmitError(msg);
         } finally {
@@ -378,12 +351,7 @@ const UserManagementPage: React.FC = () => {
                                         </button>
                                     ))}
                                 </div>
-                                {!editingUser && isInternal && (
-                                    <p className="text-[9px] text-blue-400/70 font-bold uppercase tracking-widest ml-1 mt-1 flex items-center gap-1">
-                                        <ShieldCheckIcon className="w-3 h-3" />
-                                        Will create a Firebase Auth account for login
-                                    </p>
-                                )}
+
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
