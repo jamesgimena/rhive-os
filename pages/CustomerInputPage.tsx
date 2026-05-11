@@ -879,11 +879,11 @@ const CustomerInputPage: React.FC = () => {
                     affiliations: c.affiliations || []
                 })),
                 details: {
-                    purchaseIntent: purchaseIntent,
+                    purchaseIntent: buyerIntent,
                     scopeType: scopeType,
-                    activeLeak: repairDetails.activeLeak,
-                    isOld: repairDetails.isOld,
-                    hasPhotos: repairDetails.hasPhotos,
+                    activeLeak: activeLeak,
+                    isOld: roofAge,
+                    hasPhotos: hasPhotos,
                     scheduledInspection: scheduledDetails || undefined
                 }
             });

@@ -179,19 +179,19 @@ export const projectService = {
     subscribe: (callback: (data: any[]) => void) => {
         let projects: any[] = [];
         let leads: any[] = [];
-        
+
         const notify = () => callback([...projects, ...leads]);
-        
+
         const unsubProjects = firestoreService.subscribeToDocuments('projects', (data) => {
             projects = data;
             notify();
         });
-        
+
         const unsubLeads = firestoreService.subscribeToDocuments('leads', (data) => {
             leads = data;
             notify();
         });
-        
+
         return () => {
             unsubProjects();
             unsubLeads();
@@ -201,10 +201,10 @@ export const projectService = {
         let projects: any[] = [];
         let leads: any[] = [];
         const notify = () => callback([...projects, ...leads]);
-        
+
         const unsubP = firestoreService.subscribeToDocuments('projects', (d) => { projects = d; notify(); });
         const unsubL = firestoreService.subscribeToDocuments('leads', (d) => { leads = d; notify(); });
-        
+
         return () => { unsubP(); unsubL(); };
     },
     subscribeToRecentActivity: (callback: (data: any[]) => void, limitCount = 5) => {

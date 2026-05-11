@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import PageContainer from '../components/PageContainer';
 import Card from '../components/Card';
 import { Button } from '../components/ui/button';
-import { 
-    PlusIcon, 
-    PencilSquareIcon, 
-    TrashIcon, 
-    UserIcon, 
+import {
+    PlusIcon,
+    PencilSquareIcon,
+    TrashIcon,
+    UserIcon,
     MagnifyingGlassIcon,
     XMarkIcon,
     ShieldCheckIcon,
@@ -31,7 +31,13 @@ const UserManagementPage: React.FC = () => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [formError, setFormError] = useState('');
-    
+    // Change Password modal state
+    const [pwUser, setPwUser] = useState<User | null>(null);
+    const [newPassword, setNewPassword] = useState('');
+    const [pwError, setPwError] = useState('');
+    const [pwSuccess, setPwSuccess] = useState(false);
+    const [pwSubmitting, setPwSubmitting] = useState(false);
+
     // Form state
     const [formData, setFormData] = useState({
         name: '',
@@ -49,7 +55,7 @@ const UserManagementPage: React.FC = () => {
         return () => unsub();
     }, []);
 
-    const filteredUsers = users.filter(u => 
+    const filteredUsers = users.filter(u =>
         u.name.toLowerCase().includes(search.toLowerCase()) ||
         u.email?.toLowerCase().includes(search.toLowerCase()) ||
         u.role.toLowerCase().includes(search.toLowerCase())
@@ -65,11 +71,11 @@ const UserManagementPage: React.FC = () => {
     const handleOpenEdit = (user: User) => {
         setEditingUser(user);
         setFormError('');
-        setFormData({ 
-            name: user.name, 
-            role: user.role, 
-            email: user.email || '', 
-            phone: user.phone || '', 
+        setFormData({
+            name: user.name,
+            role: user.role,
+            email: user.email || '',
+            phone: user.phone || '',
             password: ''
         });
         setIsModalOpen(true);
@@ -78,6 +84,28 @@ const UserManagementPage: React.FC = () => {
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
             await userService.delete(id);
+        }
+    };
+
+    const openChangePw = (user: User) => {
+        setPwUser(user);
+        setNewPassword('');
+        setPwError('');
+        setPwSuccess(false);
+    };
+
+    const handleChangePassword = async () => {
+        if (!pwUser) return;
+        if (newPassword.length < 6) { setPwError('Password must be at least 6 characters.'); return; }
+        setPwSubmitting(true);
+        setPwError('');
+        try {
+            await userService.update(pwUser.id, { password: newPassword, updated_at: new Date().toISOString() });
+            setPwSuccess(true);
+        } catch (err: any) {
+            setPwError(err?.message || 'Failed to update password.');
+        } finally {
+            setPwSubmitting(false);
         }
     };
 
@@ -132,8 +160,8 @@ const UserManagementPage: React.FC = () => {
             const msg = err?.code === 'auth/email-already-in-use'
                 ? 'That email address is already registered.'
                 : err?.code === 'auth/weak-password'
-                ? 'Password must be at least 6 characters.'
-                : err?.message || 'An error occurred. Please try again.';
+                    ? 'Password must be at least 6 characters.'
+                    : err?.message || 'An error occurred. Please try again.';
             setFormError(msg);
         } finally {
             setSubmitting(false);
@@ -158,8 +186,8 @@ const UserManagementPage: React.FC = () => {
     const isInternal = INTERNAL_ROLES.includes(formData.role as UserType);
 
     return (
-        <PageContainer 
-            title="User Management" 
+        <PageContainer
+            title="User Management"
             description="Manage organizational access, security roles, and user credentials from a centralized protocol."
             headerAction={
                 <Button onClick={handleOpenAdd} className="bg-[#ec028b] hover:bg-[#ff039a] text-white">
@@ -173,9 +201,9 @@ const UserManagementPage: React.FC = () => {
                 <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
                     <div className="relative w-full md:w-96">
                         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <input 
-                            type="text" 
-                            placeholder="Filter users by name, email, or role..." 
+                        <input
+                            type="text"
+                            placeholder="Filter users by name, email, or role..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full bg-black/40 border border-gray-800 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:border-[#ec028b] outline-none transition-all"
@@ -205,15 +233,24 @@ const UserManagementPage: React.FC = () => {
                         <div key={user.id} className="group relative bg-gray-900/40 border border-gray-800 rounded-2xl p-6 hover:border-[#ec028b]/50 transition-all duration-300">
                             {/* Actions Overlay */}
                             <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button 
+                                <button
                                     onClick={() => handleOpenEdit(user)}
                                     className="p-2 bg-gray-800 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-all"
+                                    title="Edit user"
                                 >
                                     <PencilSquareIcon className="w-4 h-4" />
                                 </button>
-                                <button 
+                                <button
+                                    onClick={() => openChangePw(user)}
+                                    className="p-2 bg-[#ec028b]/10 rounded-lg text-[#ec028b]/60 hover:text-[#ec028b] hover:bg-[#ec028b]/20 transition-all"
+                                    title="Change password"
+                                >
+                                    <LockIcon className="w-4 h-4" />
+                                </button>
+                                <button
                                     onClick={() => handleDelete(user.id)}
                                     className="p-2 bg-red-900/20 rounded-lg text-red-500/70 hover:text-red-500 hover:bg-red-900/40 transition-all"
+                                    title="Delete user"
                                 >
                                     <TrashIcon className="w-4 h-4" />
                                 </button>
@@ -255,8 +292,8 @@ const UserManagementPage: React.FC = () => {
                                 <div className="flex items-center gap-1.5">
                                     <div className={cn(
                                         "w-1.5 h-1.5 rounded-full",
-                                        INTERNAL_ROLES.includes(user.role as UserType) 
-                                            ? "bg-[#ec028b] shadow-[0_0_8px_#ec028b]" 
+                                        INTERNAL_ROLES.includes(user.role as UserType)
+                                            ? "bg-[#ec028b] shadow-[0_0_8px_#ec028b]"
                                             : "bg-green-500 shadow-[0_0_8px_#22c55e]"
                                     )} />
                                     <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
@@ -323,21 +360,21 @@ const UserManagementPage: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
-                                    <input 
+                                    <input
                                         required
-                                        type="text" 
+                                        type="text"
                                         value={formData.name}
-                                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         className="w-full bg-black/60 border border-gray-800 focus:border-[#ec028b] rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
                                         placeholder="Enter display name"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Phone Number</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         value={formData.phone}
-                                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                         className="w-full bg-black/60 border border-gray-800 focus:border-[#ec028b] rounded-xl px-4 py-3 text-sm text-white outline-none transition-all"
                                         placeholder="+1 (555) 000-0000"
                                     />
@@ -346,12 +383,12 @@ const UserManagementPage: React.FC = () => {
 
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Email Address</label>
-                                <input 
+                                <input
                                     required
-                                    type="email" 
+                                    type="email"
                                     value={formData.email}
                                     disabled={!!editingUser}
-                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     className={cn(
                                         "w-full bg-black/60 border border-gray-800 focus:border-[#ec028b] rounded-xl px-4 py-3 text-sm text-white outline-none transition-all",
                                         editingUser && "opacity-50 cursor-not-allowed"
@@ -370,10 +407,10 @@ const UserManagementPage: React.FC = () => {
                                     </label>
                                     <div className="relative">
                                         <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                                        <input 
-                                            type="password" 
+                                        <input
+                                            type="password"
                                             value={formData.password}
-                                            onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                             className="w-full bg-black/60 border border-gray-800 focus:border-[#ec028b] rounded-xl pl-12 pr-4 py-3 text-sm text-white outline-none transition-all"
                                             placeholder="••••••••••••"
                                             required
@@ -393,15 +430,15 @@ const UserManagementPage: React.FC = () => {
                             )}
 
                             <div className="pt-4 flex gap-4">
-                                <Button 
-                                    type="button" 
+                                <Button
+                                    type="button"
                                     onClick={() => setIsModalOpen(false)}
                                     disabled={submitting}
                                     className="flex-1 bg-gray-900 border-gray-800 text-gray-500 hover:text-white disabled:opacity-40"
                                 >
                                     Abort
                                 </Button>
-                                <Button 
+                                <Button
                                     type="submit"
                                     disabled={submitting}
                                     className="flex-[2] bg-[#ec028b] hover:bg-[#ff039a] text-white disabled:opacity-60"
@@ -417,6 +454,94 @@ const UserManagementPage: React.FC = () => {
                                 </Button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Change Password Modal ───────────────────────────────── */}
+            {pwUser && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setPwUser(null)} />
+                    <div className="relative w-full max-w-md bg-[#0c0c0e] border border-gray-800 rounded-3xl overflow-hidden shadow-2xl animate-fade-in">
+
+                        {/* Header */}
+                        <div className="p-6 border-b border-gray-800 bg-black/40 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none mb-1">Change Password</h3>
+                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Updates Firestore record only</p>
+                            </div>
+                            <button onClick={() => setPwUser(null)} className="text-gray-500 hover:text-white transition-colors">
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-5">
+                            {/* User preview */}
+                            <div className="flex items-center gap-3 bg-[#ec028b]/5 border border-[#ec028b]/20 rounded-xl p-3">
+                                <div className="w-9 h-9 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center font-black text-[#ec028b]">
+                                    {pwUser.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <p className="text-white font-bold text-sm leading-none">{pwUser.name}</p>
+                                    <p className="text-gray-500 text-xs mt-0.5">{pwUser.email || pwUser.role}</p>
+                                </div>
+                            </div>
+
+                            {pwSuccess ? (
+                                <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-4 text-center space-y-3">
+                                    <p className="text-green-400 font-bold text-sm">✓ Password updated in Firestore!</p>
+                                    <button onClick={() => setPwUser(null)} className="px-6 py-2 bg-gray-800 text-gray-300 hover:text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-all">
+                                        Done
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">New Password</label>
+                                        <div className="relative">
+                                            <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+                                            <input
+                                                type="password"
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                className="w-full bg-black/60 border border-gray-800 focus:border-[#ec028b] rounded-xl pl-12 pr-4 py-3 text-sm text-white outline-none transition-all"
+                                                placeholder="••••••••••••"
+                                                minLength={6}
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest ml-1">Minimum 6 characters</p>
+                                    </div>
+
+                                    {pwError && (
+                                        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+                                            <p className="text-red-400 text-xs font-bold">{pwError}</p>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-4 pt-1">
+                                        <Button type="button" onClick={() => setPwUser(null)} className="flex-1 bg-gray-900 border-gray-800 text-gray-500 hover:text-white">
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={handleChangePassword}
+                                            disabled={pwSubmitting || newPassword.length < 6}
+                                            className="flex-[2] bg-[#ec028b] hover:bg-[#ff039a] text-white disabled:opacity-50"
+                                        >
+                                            {pwSubmitting ? (
+                                                <span className="flex items-center gap-2">
+                                                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                    Saving...
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-2"><LockIcon className="w-4 h-4" />Save Password</span>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
