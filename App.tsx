@@ -11,6 +11,7 @@ import { GlobalHeader } from './components/GlobalHeader';
 import { pageComponentMap } from './pageRegistry';
 import { CircuitryBackground } from './components/CircuitryBackground';
 import { FloatingEstimator } from './components/FloatingEstimator';
+import { GlobalChatWidget } from './components/chat/GlobalChatWidget';
 import { DevNavigator } from './components/DevNavigator';
 import { cn } from './lib/utils';
 import { session } from './lib/session';
@@ -92,6 +93,7 @@ const AppContentAuthenticated: React.FC = () => {
                 </main>
             </div>
             <FloatingEstimator />
+            <GlobalChatWidget />
             {window.location.hostname === 'localhost' && <DevNavigator />}
         </div>
     );
