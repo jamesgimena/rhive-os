@@ -213,7 +213,12 @@ export const MockDatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ 
             return { success: false, error: 'No account found with this email address.' };
         }
         const foundUser = userResult.data as User;
-        if (foundUser.role !== role) {
+        // Allow 'Admin' selection to also authenticate 'Super Admin' accounts,
+        // since Super Admins use the same internal login portal.
+        const isRoleMatch =
+            foundUser.role === role ||
+            (role === 'Admin' && foundUser.role === 'Super Admin');
+        if (!isRoleMatch) {
             return { success: false, error: `No ${role} account found with this email.` };
         }
         if (!foundUser.password_hash) {
