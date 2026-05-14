@@ -20,7 +20,7 @@ import { cn } from '../lib/utils';
 import { Button } from '../components/ui/button';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { authService } from '../lib/firebaseService';
+import { passwordResetService } from '../lib/firebaseService';
 
 interface LoginPageProps {
     onLogin: (role: UserType, password?: string, email?: string) => Promise<any>;
@@ -190,7 +190,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         forgotAttempts.current.push(now);
 
         setLoading(true);
-        const result = await authService.sendPasswordReset(forgotEmail);
+        const result = await passwordResetService.requestReset(forgotEmail);
         setLoading(false);
 
         if (!result.success) {
@@ -577,7 +577,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                         disabled={!internalEmail || !internalPassword || loading}
                                         className="flex-1 h-12 bg-rhive-pink hover:bg-[#ff039a] text-white rounded-xl uppercase tracking-widest text-[10px] font-black shadow-[0_0_30px_rgba(236,2,139,0.3)] disabled:opacity-40"
                                     >
-                                        {loading ? 'Verifying…' : 'Establish Link'}
+                                        {loading ? 'Verifying…' : 'Login'}
                                         <ArrowRightIcon className="w-4 h-4 ml-2" />
                                     </Button>
                                 </div>
