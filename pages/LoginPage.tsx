@@ -147,6 +147,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     // Forgot Password state
     const [forgotEmail, setForgotEmail] = useState('');
     const [forgotSent, setForgotSent] = useState(false);
+    const [forgotOrigin, setForgotOrigin] = useState<'portal-login' | 'admin-login'>('portal-login');
     // Rate limiting: max 3 attempts per 10 minutes
     const forgotAttempts = useRef<number[]>([]);
     const RATE_LIMIT = 3;
@@ -211,6 +212,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         setError('');
         setForgotEmail('');
         setForgotSent(false);
+        setForgotOrigin('portal-login');
+    };
+
+    const goToForgot = (origin: 'portal-login' | 'admin-login', prefillEmail: string) => {
+        setForgotOrigin(origin);
+        setForgotEmail(prefillEmail);
+        setForgotSent(false);
+        setError('');
+        setView('forgot-password');
     };
 
     const publicPortals = [
@@ -391,7 +401,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                 <div className="text-center pt-1">
                                     <button
                                         type="button"
-                                        onClick={() => { setError(''); setForgotEmail(portalEmail); setForgotSent(false); setView('forgot-password'); }}
+                                        onClick={() => goToForgot('portal-login', portalEmail)}
                                         className="text-[10px] font-bold uppercase tracking-widest text-gray-600 hover:text-rhive-pink transition-colors"
                                     >
                                         Forgot Password?
@@ -436,7 +446,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                         <div className="flex gap-3 pt-1">
                                             <Button
                                                 type="button"
-                                                onClick={() => { setView('portal-login'); setError(''); }}
+                                                onClick={() => { setView(forgotOrigin); setError(''); }}
                                                 className="flex-none px-5 h-12 bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800 hover:text-white rounded-xl uppercase tracking-widest text-[10px] font-black"
                                             >
                                                 <XIcon className="w-4 h-4 mr-1" />
@@ -478,7 +488,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                         </Button>
                                         <Button
                                             type="button"
-                                            onClick={() => { setView('portal-login'); setForgotSent(false); setForgotEmail(''); }}
+                                            onClick={() => { setView(forgotOrigin); setForgotSent(false); setForgotEmail(''); }}
                                             className="flex-1 h-11 bg-rhive-pink/10 border border-rhive-pink/30 text-rhive-pink hover:bg-rhive-pink/20 rounded-xl uppercase tracking-widest text-[10px] font-black"
                                         >
                                             Back to Login
@@ -576,6 +586,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                         {loading ? 'Verifying…' : 'Establish Link'}
                                         <ArrowRightIcon className="w-4 h-4 ml-2" />
                                     </Button>
+                                </div>
+
+                                {/* Forgot password link */}
+                                <div className="text-center pt-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => goToForgot('admin-login', internalEmail)}
+                                        className="text-[10px] font-bold uppercase tracking-widest text-gray-600 hover:text-rhive-pink transition-colors"
+                                    >
+                                        Forgot Password?
+                                    </button>
                                 </div>
                             </form>
                         </div>
